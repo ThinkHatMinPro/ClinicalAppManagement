@@ -140,9 +140,6 @@ export default function RegisterForm({ onSwitchToLogin }) {
       gender: data.gender,
       address: data.address,
       password: data.password,
-
-      // Public registration creates PATIENT accounts only.
-      role: "PATIENT",
     };
 
     try {
