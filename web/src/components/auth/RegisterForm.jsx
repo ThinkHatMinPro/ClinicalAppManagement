@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RoleSelector } from "@/components/ui/RoleSelector";
 
 /* =========================================================
    VALIDATION
@@ -21,6 +22,10 @@ import { Label } from "@/components/ui/label";
 
 const registerSchema = z
   .object({
+    role: z.enum(["PATIENT", "DOCTOR", "STAFF"], {
+      message: "Please select your role",
+    }),
+
     name: z
       .string()
       .min(1, "Full name is required")
@@ -36,23 +41,61 @@ const registerSchema = z
       .min(1, "Phone number is required")
       .regex(/^[0-9]{10}$/, "Enter a valid 10-digit phone number"),
 
-    dateOfBirth: z.string().min(1, "Date of birth is required"),
+    dateOfBirth: z.string().optional(),
 
-    gender: z.string().min(1, "Gender is required"),
+    gender: z.string().optional(),
 
-    address: z
-      .string()
-      .min(1, "Address is required")
-      .min(5, "Please enter a valid address"),
+    address: z.string().optional(),
+
+    specialty: z.string().optional(),
 
     password: z.string().min(8, "Password must be at least 8 characters"),
 
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
+
+  /* Password Match */
+
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
+  })
+
+  /* Patient - DOB */
+
+  .refine((data) => data.role !== "PATIENT" || !!data.dateOfBirth, {
+    message: "Date of birth is required",
+    path: ["dateOfBirth"],
+  })
+
+  /* Patient - Gender */
+
+  .refine((data) => data.role !== "PATIENT" || !!data.gender, {
+    message: "Gender is required",
+    path: ["gender"],
+  })
+
+  /* Patient - Address */
+
+  .refine(
+    (data) =>
+      data.role !== "PATIENT" || (data.address && data.address.length >= 5),
+    {
+      message: "Please enter a valid address",
+      path: ["address"],
+    },
+  )
+
+  /* Doctor - Specialty */
+
+  .refine((data) => data.role !== "DOCTOR" || !!data.specialty, {
+    message: "Specialty is required",
+    path: ["specialty"],
   });
+
+/* =========================================================
+   COMMON CONTROL STYLE
+========================================================= */
 
 const controlClass =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 dark:[color-scheme:dark]";
@@ -65,6 +108,7 @@ export default function RegisterForm({ onSwitchToLogin }) {
   const [step, setStep] = useState(1);
 
   const [showPassword, setShowPassword] = useState(false);
+
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [notice, setNotice] = useState("");
@@ -76,35 +120,111 @@ export default function RegisterForm({ onSwitchToLogin }) {
     handleSubmit,
     trigger,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(registerSchema),
 
     defaultValues: {
+      role: "",
       name: "",
       email: "",
       phone: "",
       dateOfBirth: "",
       gender: "",
       address: "",
+      specialty: "",
       password: "",
       confirmPassword: "",
     },
   });
 
   /* =========================================================
+     WATCH SELECTED ROLE
+  ========================================================= */
+
+  const selectedRole = watch("role");
+
+  /* =========================================================
      DEVELOPMENT AUTOFILL
   ========================================================= */
 
   const handleDevAutofill = () => {
-    setValue("name", "Test Patient");
-    setValue("email", "patient@test.com");
-    setValue("phone", "9876543210");
-    setValue("dateOfBirth", "2000-05-15");
-    setValue("gender", "Female");
-    setValue("address", "Hyderabad, Telangana");
-    setValue("password", "Password@123");
-    setValue("confirmPassword", "Password@123");
+    if (!selectedRole) {
+      setNotice("Please select a role first.");
+      return;
+    }
+
+    setNotice("");
+
+    /* -------------------------
+       PATIENT
+    ------------------------- */
+
+    if (selectedRole === "PATIENT") {
+      setValue("name", "Test Patient");
+      setValue("email", "patient@test.com");
+      setValue("phone", "9876543210");
+
+      setValue("dateOfBirth", "2000-05-15");
+
+      setValue("gender", "Female");
+
+      setValue("address", "Hyderabad, Telangana");
+
+      setValue("specialty", "");
+
+      setValue("password", "Password@123");
+
+      setValue("confirmPassword", "Password@123");
+    }
+
+    /* -------------------------
+       DOCTOR
+    ------------------------- */
+
+    if (selectedRole === "DOCTOR") {
+      setValue("name", "Dr Test");
+
+      setValue("email", "doctor@test.com");
+
+      setValue("phone", "9876543211");
+
+      setValue("specialty", "Cardiology");
+
+      /* Clear Patient fields */
+
+      setValue("dateOfBirth", "");
+      setValue("gender", "");
+      setValue("address", "");
+
+      setValue("password", "Password@123");
+
+      setValue("confirmPassword", "Password@123");
+    }
+
+    /* -------------------------
+       STAFF
+    ------------------------- */
+
+    if (selectedRole === "STAFF") {
+      setValue("name", "Test Staff");
+
+      setValue("email", "staff@test.com");
+
+      setValue("phone", "9876543212");
+
+      /* Clear role-specific fields */
+
+      setValue("dateOfBirth", "");
+      setValue("gender", "");
+      setValue("address", "");
+      setValue("specialty", "");
+
+      setValue("password", "Password@123");
+
+      setValue("confirmPassword", "Password@123");
+    }
   };
 
   /* =========================================================
@@ -112,15 +232,24 @@ export default function RegisterForm({ onSwitchToLogin }) {
   ========================================================= */
 
   const handleNext = async () => {
-    const isValid = await trigger([
-      "name",
-      "dateOfBirth",
-      "gender",
-      "phone",
-      "address",
-    ]);
+    let fields = ["role", "name", "phone"];
+
+    /* Patient fields */
+
+    if (selectedRole === "PATIENT") {
+      fields.push("dateOfBirth", "gender", "address");
+    }
+
+    /* Doctor fields */
+
+    if (selectedRole === "DOCTOR") {
+      fields.push("specialty");
+    }
+
+    const isValid = await trigger(fields);
 
     if (isValid) {
+      setNotice("");
       setStep(2);
     }
   };
@@ -132,30 +261,50 @@ export default function RegisterForm({ onSwitchToLogin }) {
   const onSubmit = async (data) => {
     setNotice("");
 
-    const payload = {
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      dateOfBirth: data.dateOfBirth,
-      gender: data.gender,
-      address: data.address,
-      password: data.password,
-    };
-
     try {
+      const payload = {
+        role: data.role,
+
+        name: data.name.trim(),
+
+        email: data.email.trim().toLowerCase(),
+
+        phone: data.phone,
+
+        password: data.password,
+
+        /* Patient Data */
+
+        ...(data.role === "PATIENT" && {
+          dateOfBirth: data.dateOfBirth,
+          gender: data.gender,
+          address: data.address,
+        }),
+
+        /* Doctor Data */
+
+        ...(data.role === "DOCTOR" && {
+          specialty: data.specialty,
+        }),
+      };
+
       console.log("Register data:", payload);
 
-      /*
-      TODO: Connect backend
-
-      await fetch("/api/auth/signup", {
+      const response = await fetch("http://localhost:5000/api/auth/signup", {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify(payload),
       });
-      */
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Unable to create account");
+      }
 
       setNotice("Account created successfully.");
 
@@ -167,14 +316,30 @@ export default function RegisterForm({ onSwitchToLogin }) {
     }
   };
 
+  /* =========================================================
+     UI
+  ========================================================= */
+
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="w-full max-w-md">
-        {/* HEADING + Developement only AUTOFILL */}
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Create an account
-          </h1>
+        {/* =================================================
+            HEADING + AUTOFILL
+        ================================================= */}
+
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Create an account
+            </h1>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Select your role and enter your details.
+            </p>
+          </div>
+
+          {/* DEVELOPMENT ONLY */}
+
           {import.meta.env.DEV && (
             <Button
               type="button"
@@ -188,16 +353,44 @@ export default function RegisterForm({ onSwitchToLogin }) {
           )}
         </div>
 
-        {/* STEP INDICATOR */}
+        {/* =================================================
+            STEP INDICATOR
+        ================================================= */}
+
         <StepIndicator step={step} />
 
-        {/* FORM */}
+        {/* =================================================
+            FORM
+        ================================================= */}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6">
-          {/* STEP 1 - PERSONAL DETAILS */}
+          {/* Register role with React Hook Form */}
+
+          <input type="hidden" {...register("role")} />
+
+          {/* =================================================
+              STEP 1
+          ================================================= */}
+
           {step === 1 && (
-            <div className="space-y-2">
-              {/* Full Name */}
+            <div className="space-y-3">
+              {/* ROLE SELECTOR */}
+
+              <RoleSelector
+                value={selectedRole}
+                onChange={(role) => {
+                  setValue("role", role, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+
+                  setNotice("");
+                }}
+                error={errors.role?.message}
+              />
+
+              {/* FULL NAME */}
+
               <Field
                 label="Full name"
                 htmlFor="register-name"
@@ -214,45 +407,8 @@ export default function RegisterForm({ onSwitchToLogin }) {
                 />
               </Field>
 
-              {/* DOB + Gender */}
+              {/* PHONE */}
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  label="Date of birth"
-                  htmlFor="register-dob"
-                  error={errors.dateOfBirth}
-                >
-                  <input
-                    id="register-dob"
-                    type="date"
-                    max={today}
-                    autoComplete="bday"
-                    aria-invalid={!!errors.dateOfBirth}
-                    className={controlClass}
-                    {...register("dateOfBirth")}
-                  />
-                </Field>
-
-                <Field
-                  label="Gender"
-                  htmlFor="register-gender"
-                  error={errors.gender}
-                >
-                  <select
-                    id="register-gender"
-                    className={controlClass}
-                    aria-invalid={!!errors.gender}
-                    {...register("gender")}
-                  >
-                    <option value="">Select</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </Field>
-              </div>
-
-              {/* Phone */}
               <Field
                 label="Phone number"
                 htmlFor="register-phone"
@@ -277,25 +433,120 @@ export default function RegisterForm({ onSwitchToLogin }) {
                 </div>
               </Field>
 
-              {/* Address */}
+              {/* =================================================
+                  PATIENT FIELDS
+              ================================================= */}
 
-              <Field
-                label="Address"
-                htmlFor="register-address"
-                error={errors.address}
-              >
-                <textarea
-                  id="register-address"
-                  rows={2}
-                  autoComplete="street-address"
-                  placeholder="House no., street, city, PIN code"
-                  aria-invalid={!!errors.address}
-                  className={`${controlClass} h-auto min-h-[4rem] resize-none py-2`}
-                  {...register("address")}
-                />
-              </Field>
+              {selectedRole === "PATIENT" && (
+                <>
+                  {/* DOB + GENDER */}
 
-              {/* Next */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {/* DOB */}
+
+                    <Field
+                      label="Date of birth"
+                      htmlFor="register-dob"
+                      error={errors.dateOfBirth}
+                    >
+                      <input
+                        id="register-dob"
+                        type="date"
+                        max={today}
+                        autoComplete="bday"
+                        className={controlClass}
+                        aria-invalid={!!errors.dateOfBirth}
+                        {...register("dateOfBirth")}
+                      />
+                    </Field>
+
+                    {/* GENDER */}
+
+                    <Field
+                      label="Gender"
+                      htmlFor="register-gender"
+                      error={errors.gender}
+                    >
+                      <select
+                        id="register-gender"
+                        className={controlClass}
+                        aria-invalid={!!errors.gender}
+                        {...register("gender")}
+                      >
+                        <option value="">Select</option>
+
+                        <option value="Male">Male</option>
+
+                        <option value="Female">Female</option>
+
+                        <option value="Other">Other</option>
+                      </select>
+                    </Field>
+                  </div>
+
+                  {/* ADDRESS */}
+
+                  <Field
+                    label="Address"
+                    htmlFor="register-address"
+                    error={errors.address}
+                  >
+                    <textarea
+                      id="register-address"
+                      rows={2}
+                      autoComplete="street-address"
+                      placeholder="House no., street, city, PIN code"
+                      aria-invalid={!!errors.address}
+                      className={`${controlClass} h-auto min-h-[4rem] resize-none py-2`}
+                      {...register("address")}
+                    />
+                  </Field>
+                </>
+              )}
+
+              {/* =================================================
+                  DOCTOR FIELDS
+              ================================================= */}
+
+              {selectedRole === "DOCTOR" && (
+                <Field
+                  label="Specialty"
+                  htmlFor="register-specialty"
+                  error={errors.specialty}
+                >
+                  <Input
+                    id="register-specialty"
+                    type="text"
+                    placeholder="e.g. Cardiology"
+                    className="h-10"
+                    aria-invalid={!!errors.specialty}
+                    {...register("specialty")}
+                  />
+                </Field>
+              )}
+
+              {/* =================================================
+                  STAFF
+
+                  No extra Staff fields currently because
+                  Prisma schema doesn't have a Staff model.
+              ================================================= */}
+
+              {/* NOTICE
+                  Important because Autofill can show
+                  "Please select a role first."
+              */}
+
+              {notice && (
+                <p
+                  role="status"
+                  className="rounded-md border border-border bg-muted p-2.5 text-xs text-muted-foreground"
+                >
+                  {notice}
+                </p>
+              )}
+
+              {/* NEXT */}
 
               <Button
                 type="button"
@@ -309,12 +560,13 @@ export default function RegisterForm({ onSwitchToLogin }) {
           )}
 
           {/* =================================================
-              STEP 2 - ACCOUNT & SECURITY
+              STEP 2
           ================================================= */}
 
           {step === 2 && (
-            <div className="space-y-2">
-              {/* Email */}
+            <div className="space-y-3">
+              {/* EMAIL */}
+
               <Field
                 label="Email"
                 htmlFor="register-email"
@@ -331,7 +583,7 @@ export default function RegisterForm({ onSwitchToLogin }) {
                 />
               </Field>
 
-              {/* Password */}
+              {/* PASSWORD */}
 
               <Field
                 label="Password"
@@ -358,7 +610,7 @@ export default function RegisterForm({ onSwitchToLogin }) {
                 </div>
               </Field>
 
-              {/* Confirm Password */}
+              {/* CONFIRM PASSWORD */}
 
               <Field
                 label="Confirm password"
@@ -384,7 +636,7 @@ export default function RegisterForm({ onSwitchToLogin }) {
                 </div>
               </Field>
 
-              {/* Notice */}
+              {/* NOTICE */}
 
               {notice && (
                 <p
@@ -395,7 +647,7 @@ export default function RegisterForm({ onSwitchToLogin }) {
                 </p>
               )}
 
-              {/* Navigation */}
+              {/* NAVIGATION */}
 
               <div className="flex gap-3 pt-2">
                 <Button
@@ -426,7 +678,9 @@ export default function RegisterForm({ onSwitchToLogin }) {
                   )}
                 </Button>
               </div>
-              {/* Terms */}
+
+              {/* TERMS */}
+
               <p className="pt-2 text-center text-xs leading-relaxed text-muted-foreground">
                 By creating an account, you agree to our{" "}
                 <a
@@ -452,27 +706,35 @@ export default function RegisterForm({ onSwitchToLogin }) {
   );
 }
 
-/* STEP INDICATOR */
+/* =========================================================
+   STEP INDICATOR
+========================================================= */
 
 function StepIndicator({ step }) {
   return (
     <div className="mx-auto flex w-full max-w-[220px] items-start">
       {/* STEP 1 */}
+
       <div className="flex flex-col items-center">
         <div className="flex size-7 items-center justify-center rounded-full border-2 border-primary bg-primary text-xs font-semibold text-primary-foreground">
           {step > 1 ? <Check className="size-4" aria-hidden="true" /> : "1"}
         </div>
+
         <span className="mt-1.5 text-[11px] font-medium text-foreground">
-          Personal
+          Details
         </span>
       </div>
+
       {/* LINE */}
+
       <div
         className={`mx-2 mt-4 h-0.5 flex-1 ${
           step > 1 ? "bg-primary" : "bg-border"
         }`}
       />
+
       {/* STEP 2 */}
+
       <div className="flex flex-col items-center">
         <div
           className={`flex size-7 items-center justify-center rounded-full border-2 text-xs font-semibold ${
@@ -496,7 +758,9 @@ function StepIndicator({ step }) {
   );
 }
 
-/* FIELD */
+/* =========================================================
+   FIELD
+========================================================= */
 
 function Field({ label, htmlFor, error, hint, children }) {
   return (
@@ -518,7 +782,9 @@ function Field({ label, htmlFor, error, hint, children }) {
   );
 }
 
-/* PASSWORD BUTTON */
+/* =========================================================
+   PASSWORD BUTTON
+========================================================= */
 
 function PasswordButton({ show, setShow, label = "password" }) {
   return (
