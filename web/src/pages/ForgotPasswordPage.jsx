@@ -14,7 +14,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { SwitchMode } from "@/components/switch-mode";
+import { SwitchMode } from "@/components/theme/switch-mode";
 
 const forgotSchema = z.object({
   email: z

@@ -15,7 +15,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import HeartbeatLine from "@/components/HeartbeatLine";
-import { SwitchMode } from "@/components/switch-mode";
+import { SwitchMode } from "@/components/theme/switch-mode";
 
 const loginSchema = z.object({
   email: z
@@ -197,6 +197,15 @@ export default function LoginPage() {
                 {isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
             </form>
+            <p className="text-center text-sm text-muted-foreground">
+              Don't have a patient account?{" "}
+              <Link
+                to="/signup"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Create account
+              </Link>
+            </p>
           </CardContent>
         </Card>
 

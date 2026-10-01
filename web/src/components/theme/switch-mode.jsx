@@ -1,4 +1,3 @@
-"use client";;
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { IoMoon, IoMoonOutline, IoSunny, IoSunnyOutline } from "react-icons/io5";
