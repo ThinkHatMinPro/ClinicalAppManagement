@@ -7,6 +7,9 @@ export function ThemeProvider({ children }) {
       defaultTheme="light"
       enableSystem
       storageKey="clinic-theme"
+      scriptProps={{
+        suppressHydrationWarning: true,
+      }}
     >
       {children}
     </NextThemesProvider>
