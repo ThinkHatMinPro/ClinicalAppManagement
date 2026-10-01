@@ -1,8 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import AuthPage from "@/pages/AuthPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import AppLayout from "@/components/layout/AppLayout";
+import AuthPage from "./pages/auth/AuthPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import AppLayout from "./components/layout/AppLayout";
 
 function Placeholder({ title }) {
   return (
@@ -20,26 +20,21 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Authentication */}
-        <Route path="/auth" element={<AuthPage />} />
+        
+          <Route path="/auth" element={<AuthPage />} />
 
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-
-        {/* Application */}
-        <Route element={<AppLayout />}>
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route element={<AppLayout />}>
           <Route
             path="/appointments"
-            element={<Placeholder title="Appointments" />}
-          />
+            element={<Placeholder title="Appointments" />} />
 
           <Route path="/patients" element={<Placeholder title="Patients" />} />
 
-          <Route path="/doctors" element={<Placeholder title="Doctors" />} />
-        </Route>
-
-        {/* Default route */}
-        <Route path="*" element={<Navigate to="/auth" replace />} />
-      </Routes>
+          <Route path="/doctors" element={<Placeholder title="Doctors" />} /></Route>
+          <Route path="*" element={<Navigate to="/auth" replace />} />
+        
+        </Routes>
     </BrowserRouter>
   );
 }
