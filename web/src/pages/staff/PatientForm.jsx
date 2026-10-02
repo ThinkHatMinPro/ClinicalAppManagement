@@ -1,27 +1,31 @@
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import api from "@/lib/api";
+
+const initialForm = {
+    name: "",
+    dateOfBirth: "",
+    gender: "",
+    phone: "",
+    email: "",
+    address: "",
+};
 
 export default function PatientForm() {
     const navigate = useNavigate();
 
-    const [form, setForm] = useState({
-        name: "",
-        dateOfBirth: "",
-        gender: "",
-        phone: "",
-        email: "",
-        address: "",
-    });
-
+    const [formData, setFormData] = useState(initialForm);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
     const handleChange = (event) => {
         const { name, value } = event.target;
 
-        setForm((previous) => ({
-            ...previous,
+        setFormData((current) => ({
+            ...current,
             [name]: value,
         }));
     };
@@ -29,20 +33,31 @@ export default function PatientForm() {
     const handleSubmit = async (event) => {
         event.preventDefault();
 
+        setError("");
+        setSuccess("");
+
+        if (!formData.name.trim()) {
+            setError("Patient name is required");
+            return;
+        }
+
         try {
             setLoading(true);
-            setError("");
 
             await api.post("/staff/patients", {
-                name: form.name,
-                dateOfBirth: form.dateOfBirth || null,
-                gender: form.gender || null,
-                phone: form.phone || null,
-                email: form.email || null,
-                address: form.address || null,
+                name: formData.name.trim(),
+                dateOfBirth: formData.dateOfBirth || null,
+                gender: formData.gender || null,
+                phone: formData.phone.trim() || null,
+                email: formData.email.trim() || null,
+                address: formData.address.trim() || null,
             });
 
-            navigate("/patients");
+            setSuccess("Patient created successfully");
+
+            setTimeout(() => {
+                navigate("/staff/patients", { replace: true });
+            }, 500);
         } catch (error) {
             setError(error.message || "Failed to create patient");
         } finally {
@@ -51,138 +66,183 @@ export default function PatientForm() {
     };
 
     return (
-        <div className="mx-auto max-w-3xl space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold tracking-tight">
-                    Add Patient
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                    Register a new patient in the clinic.
-                </p>
+        <div className="mx-auto w-full max-w-3xl space-y-6">
+            <div className="flex items-center gap-4">
+                <button
+                    type="button"
+                    onClick={() => navigate("/staff/patients")}
+                    className="inline-flex size-10 items-center justify-center rounded-lg border bg-background hover:bg-muted"
+                >
+                    <ArrowLeft className="size-4" />
+                </button>
+
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">
+                        Add Patient
+                    </h2>
+
+                    <p className="text-sm text-muted-foreground">
+                        Register a new patient in the clinic.
+                    </p>
+                </div>
             </div>
 
-            <form
-                onSubmit={handleSubmit}
-                className="space-y-6 rounded-xl border bg-card p-6 shadow-sm"
-            >
-                {error && (
-                    <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                        {error}
+            <div className="rounded-xl border bg-card p-6 shadow-sm">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                            {error}
+                        </div>
+                    )}
+
+                    {success && (
+                        <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-600">
+                            {success}
+                        </div>
+                    )}
+
+                    <div className="grid gap-5 md:grid-cols-2">
+                        <div className="space-y-2 md:col-span-2">
+                            <label
+                                htmlFor="name"
+                                className="text-sm font-medium"
+                            >
+                                Patient Name
+                            </label>
+
+                            <input
+                                id="name"
+                                name="name"
+                                type="text"
+                                value={formData.name}
+                                onChange={handleChange}
+                                placeholder="Enter patient name"
+                                className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="dateOfBirth"
+                                className="text-sm font-medium"
+                            >
+                                Date of Birth
+                            </label>
+
+                            <input
+                                id="dateOfBirth"
+                                name="dateOfBirth"
+                                type="date"
+                                value={formData.dateOfBirth}
+                                onChange={handleChange}
+                                className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="gender"
+                                className="text-sm font-medium"
+                            >
+                                Gender
+                            </label>
+
+                            <select
+                                id="gender"
+                                name="gender"
+                                value={formData.gender}
+                                onChange={handleChange}
+                                className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            >
+                                <option value="">Select gender</option>
+                                <option value="MALE">Male</option>
+                                <option value="FEMALE">Female</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="phone"
+                                className="text-sm font-medium"
+                            >
+                                Phone
+                            </label>
+
+                            <input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                placeholder="Enter phone number"
+                                className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="email"
+                                className="text-sm font-medium"
+                            >
+                                Email
+                            </label>
+
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="Enter email address"
+                                className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                            <label
+                                htmlFor="address"
+                                className="text-sm font-medium"
+                            >
+                                Address
+                            </label>
+
+                            <textarea
+                                id="address"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                placeholder="Enter patient address"
+                                rows={4}
+                                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
                     </div>
-                )}
 
-                <div className="grid gap-5 sm:grid-cols-2">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                            Full Name
-                        </label>
-
-                        <input
-                            name="name"
-                            value={form.name}
-                            onChange={handleChange}
-                            required
-                            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            placeholder="Enter patient name"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                            Date of Birth
-                        </label>
-
-                        <input
-                            type="date"
-                            name="dateOfBirth"
-                            value={form.dateOfBirth}
-                            onChange={handleChange}
-                            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                            Gender
-                        </label>
-
-                        <select
-                            name="gender"
-                            value={form.gender}
-                            onChange={handleChange}
-                            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    <div className="flex justify-end gap-3 border-t pt-5">
+                        <button
+                            type="button"
+                            onClick={() => navigate("/staff/patients")}
+                            disabled={loading}
+                            className="h-10 rounded-lg border px-4 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            <option value="">Select gender</option>
-                            <option value="MALE">Male</option>
-                            <option value="FEMALE">Female</option>
-                            <option value="OTHER">Other</option>
-                        </select>
+                            Cancel
+                        </button>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {loading && (
+                                <Loader2 className="size-4 animate-spin" />
+                            )}
+
+                            {loading ? "Creating..." : "Create Patient"}
+                        </button>
                     </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                            Phone
-                        </label>
-
-                        <input
-                            type="tel"
-                            name="phone"
-                            value={form.phone}
-                            onChange={handleChange}
-                            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            placeholder="Enter phone number"
-                        />
-                    </div>
-
-                    <div className="space-y-2 sm:col-span-2">
-                        <label className="text-sm font-medium">
-                            Email
-                        </label>
-
-                        <input
-                            type="email"
-                            name="email"
-                            value={form.email}
-                            onChange={handleChange}
-                            className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            placeholder="Enter email address"
-                        />
-                    </div>
-
-                    <div className="space-y-2 sm:col-span-2">
-                        <label className="text-sm font-medium">
-                            Address
-                        </label>
-
-                        <textarea
-                            name="address"
-                            value={form.address}
-                            onChange={handleChange}
-                            rows={4}
-                            className="w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            placeholder="Enter patient address"
-                        />
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/patients")}
-                        className="h-10 rounded-lg border px-4 text-sm font-medium hover:bg-muted"
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="h-10 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        {loading ? "Creating..." : "Create Patient"}
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     );
 }

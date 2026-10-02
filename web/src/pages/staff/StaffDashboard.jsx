@@ -1,76 +1,38 @@
+import { useEffect, useState } from "react";
 import {
     CalendarDays,
     Clock,
+    Loader2,
     Stethoscope,
     Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import api from "@/lib/api";
-
-const getToday = () => {
-    const date = new Date();
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-};
-
-const formatTime = (value) => {
-    if (!value) {
-        return "-";
-    }
-
-    return new Date(value).toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-};
-
-const getStatusClass = (status) => {
-    switch (status) {
-        case "SCHEDULED":
-            return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
-
-        case "IN_PROGRESS":
-            return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300";
-
-        case "COMPLETED":
-            return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
-
-        case "CANCELLED":
-            return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
-
-        default:
-            return "bg-muted text-muted-foreground";
-    }
-};
 
 export default function StaffDashboard() {
     const [stats, setStats] = useState({
         patients: 0,
         doctors: 0,
         appointments: 0,
-        todayAppointments: 0,
     });
 
     const [todayAppointments, setTodayAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const fetchDashboardData = async () => {
+    const loadDashboard = async () => {
         try {
             setLoading(true);
             setError("");
 
-            const today = getToday();
+            const today = new Date()
+                .toISOString()
+                .split("T")[0];
 
             const [
-                patientsResult,
-                doctorsResult,
-                appointmentsResult,
-                todayAppointmentsResult,
+                patientsResponse,
+                doctorsResponse,
+                appointmentsResponse,
+                todayAppointmentsResponse,
             ] = await Promise.all([
                 api.get("/staff/patients?limit=1"),
                 api.get("/staff/doctors?limit=1"),
@@ -80,197 +42,260 @@ export default function StaffDashboard() {
                 ),
             ]);
 
+            console.log(
+                "Dashboard patients:",
+                patientsResponse
+            );
+
+            console.log(
+                "Dashboard doctors:",
+                doctorsResponse
+            );
+
+            console.log(
+                "Dashboard appointments:",
+                appointmentsResponse
+            );
+
+            console.log(
+                "Today's appointments:",
+                todayAppointmentsResponse
+            );
+
             setStats({
-                patients: patientsResult.pagination?.total || 0,
-                doctors: doctorsResult.pagination?.total || 0,
+                patients:
+                    patientsResponse?.data?.pagination?.total || 0,
+
+                doctors:
+                    doctorsResponse?.data?.pagination?.total || 0,
+
                 appointments:
-                    appointmentsResult.pagination?.total || 0,
-                todayAppointments:
-                    todayAppointmentsResult.pagination?.total || 0,
+                    appointmentsResponse?.data?.pagination?.total || 0,
             });
 
             setTodayAppointments(
-                todayAppointmentsResult.appointments || []
+                todayAppointmentsResponse?.data?.appointments || []
             );
-        } catch (error) {
-            setError(error.message || "Failed to load dashboard");
+        } catch (err) {
+            console.error("Dashboard error:", err);
+
+            setError(
+                err.message || "Failed to load dashboard"
+            );
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchDashboardData();
+        loadDashboard();
     }, []);
 
-    const cards = [
-        {
-            title: "Total Patients",
-            value: stats.patients,
-            icon: Users,
-        },
-        {
-            title: "Total Doctors",
-            value: stats.doctors,
-            icon: Stethoscope,
-        },
-        {
-            title: "Total Appointments",
-            value: stats.appointments,
-            icon: CalendarDays,
-        },
-        {
-            title: "Today's Appointments",
-            value: stats.todayAppointments,
-            icon: Clock,
-        },
-    ];
+    const formatTime = (dateTime) => {
+        if (!dateTime) {
+            return "-";
+        }
+
+        return new Date(dateTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
+    const formatDate = (dateTime) => {
+        if (!dateTime) {
+            return "-";
+        }
+
+        return new Date(dateTime).toLocaleDateString([], {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
+    };
+
+    const getStatusClass = (status) => {
+        switch (status) {
+            case "SCHEDULED":
+                return "bg-blue-100 text-blue-700";
+
+            case "IN_PROGRESS":
+                return "bg-yellow-100 text-yellow-700";
+
+            case "COMPLETED":
+                return "bg-green-100 text-green-700";
+
+            case "CANCELLED":
+                return "bg-red-100 text-red-700";
+
+            default:
+                return "bg-muted text-muted-foreground";
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex min-h-[400px] items-center justify-center">
+                <Loader2 className="size-7 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">
+                <h1 className="text-2xl font-semibold">
                     Staff Dashboard
-                </h2>
+                </h1>
 
-                <p className="text-sm text-muted-foreground">
-                    Overview of clinic activity and appointments.
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Overview of clinic activity
                 </p>
             </div>
 
             {error && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                     {error}
                 </div>
             )}
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {cards.map((card) => {
-                    const Icon = card.icon;
+            <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-xl border bg-card p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-muted-foreground">
+                                Total Patients
+                            </p>
 
-                    return (
-                        <div
-                            key={card.title}
-                            className="rounded-xl border bg-card p-5 shadow-sm"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">
-                                        {card.title}
-                                    </p>
-
-                                    <p className="mt-2 text-3xl font-bold">
-                                        {loading ? "..." : card.value}
-                                    </p>
-                                </div>
-
-                                <div className="rounded-lg bg-primary/10 p-3">
-                                    <Icon className="size-5 text-primary" />
-                                </div>
-                            </div>
+                            <p className="mt-2 text-3xl font-bold">
+                                {stats.patients}
+                            </p>
                         </div>
-                    );
-                })}
+
+                        <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10">
+                            <Users className="size-5 text-primary" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-xl border bg-card p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-muted-foreground">
+                                Total Doctors
+                            </p>
+
+                            <p className="mt-2 text-3xl font-bold">
+                                {stats.doctors}
+                            </p>
+                        </div>
+
+                        <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10">
+                            <Stethoscope className="size-5 text-primary" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-xl border bg-card p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-muted-foreground">
+                                Total Appointments
+                            </p>
+
+                            <p className="mt-2 text-3xl font-bold">
+                                {stats.appointments}
+                            </p>
+                        </div>
+
+                        <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10">
+                            <CalendarDays className="size-5 text-primary" />
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div className="rounded-xl border bg-card shadow-sm">
                 <div className="border-b p-5">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Clock className="size-5 text-primary" />
+
                         <div>
-                            <h3 className="font-semibold">
+                            <h2 className="font-semibold">
                                 Today's Appointments
-                            </h3>
+                            </h2>
 
                             <p className="text-sm text-muted-foreground">
-                                Scheduled appointments for today.
+                                Appointments scheduled for today
                             </p>
                         </div>
-
-                        <CalendarDays className="size-5 text-muted-foreground" />
                     </div>
                 </div>
 
-                {loading ? (
-                    <div className="p-8 text-center text-sm text-muted-foreground">
-                        Loading appointments...
-                    </div>
-                ) : todayAppointments.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-muted-foreground">
-                        No appointments scheduled for today.
+                {todayAppointments.length === 0 ? (
+                    <div className="py-14 text-center">
+                        <CalendarDays className="mx-auto mb-3 size-10 text-muted-foreground" />
+
+                        <p className="font-medium">
+                            No appointments today
+                        </p>
+
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Today's scheduled appointments will appear here.
+                        </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="border-b bg-muted/50">
-                                <tr>
-                                    <th className="px-5 py-3 font-medium">
-                                        Time
-                                    </th>
+                    <div className="divide-y">
+                        {todayAppointments.map((appointment) => (
+                            <div
+                                key={appointment.id}
+                                className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between"
+                            >
+                                <div className="space-y-1">
+                                    <p className="font-medium">
+                                        {appointment.patient?.name ||
+                                            "Unknown Patient"}
+                                    </p>
 
-                                    <th className="px-5 py-3 font-medium">
-                                        Patient
-                                    </th>
+                                    <p className="text-sm text-muted-foreground">
+                                        Doctor:{" "}
+                                        {appointment.doctor?.name ||
+                                            "Unknown Doctor"}
+                                    </p>
 
-                                    <th className="px-5 py-3 font-medium">
-                                        Doctor
-                                    </th>
+                                    <p className="text-sm text-muted-foreground">
+                                        {appointment.reason ||
+                                            "No reason provided"}
+                                    </p>
+                                </div>
 
-                                    <th className="px-5 py-3 font-medium">
-                                        Reason
-                                    </th>
-
-                                    <th className="px-5 py-3 font-medium">
-                                        Status
-                                    </th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {todayAppointments.map((appointment) => (
-                                    <tr
-                                        key={appointment.id}
-                                        className="border-b last:border-0 hover:bg-muted/40"
-                                    >
-                                        <td className="px-5 py-4 font-medium">
+                                <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                        <p className="text-sm font-medium">
                                             {formatTime(
                                                 appointment.startTime
                                             )}
-                                        </td>
+                                        </p>
 
-                                        <td className="px-5 py-4">
-                                            {appointment.patient?.name || "-"}
-                                        </td>
+                                        <p className="text-xs text-muted-foreground">
+                                            {formatDate(
+                                                appointment.startTime
+                                            )}
+                                        </p>
+                                    </div>
 
-                                        <td className="px-5 py-4">
-                                            {appointment.doctor?.name || "-"}
-                                        </td>
-
-                                        <td className="max-w-[250px] px-5 py-4">
-                                            <span className="line-clamp-1">
-                                                {appointment.reason || "-"}
-                                            </span>
-                                        </td>
-
-                                        <td className="px-5 py-4">
-                                            <span
-                                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusClass(
-                                                    appointment.status
-                                                )}`}
-                                            >
-                                                {appointment.status
-                                                    ?.replace("_", " ")
-                                                    .toLowerCase()
-                                                    .replace(
-                                                        /\b\w/g,
-                                                        (char) =>
-                                                            char.toUpperCase()
-                                                    ) || "-"}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                    <span
+                                        className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
+                                            appointment.status
+                                        )}`}
+                                    >
+                                        {appointment.status
+                                            ?.replace("_", " ")
+                                            .toLowerCase()}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>

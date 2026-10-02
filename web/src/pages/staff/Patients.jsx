@@ -1,160 +1,198 @@
-import { Search, UserPlus, Users } from "lucide-react";
+import {
+    Search,
+    UserPlus,
+    Users,
+    Eye,
+    Loader2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
+import api from "@/lib/api";
+
 export default function Patients() {
+    const navigate = useNavigate();
+
     const [patients, setPatients] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-const navigate = useNavigate();
+
     const fetchPatients = async () => {
         try {
             setLoading(true);
             setError("");
 
-            const result = await api.get(
+            const response = await api.get(
                 `/staff/patients?search=${encodeURIComponent(search)}`
             );
 
-            setPatients(result.patients || []);
-        } catch (error) {
-            setError(error.message || "Failed to fetch patients");
+            console.log("Patients API response:", response);
+
+            setPatients(response?.data?.patients || []);
+        } catch (err) {
+            console.error("Fetch patients error:", err);
+            setError(err.message || "Failed to load patients");
+            setPatients([]);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchPatients();
-        }, 300);
-
-        return () => clearTimeout(timer);
+        fetchPatients();
     }, [search]);
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">
+                    <h1 className="text-2xl font-semibold">
                         Patients
-                    </h2>
+                    </h1>
+
                     <p className="text-sm text-muted-foreground">
-                        Manage registered clinic patients.
+                        Manage clinic patients
                     </p>
                 </div>
 
                 <button
-    type="button"
-    onClick={() => navigate("/patients/new")}
-    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
->
-    <UserPlus className="size-4" />
-    Add Patient
-</button>
+                    onClick={() => navigate("/staff/patients/new")}
+                    className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
+                >
+                    <UserPlus className="size-4" />
+                    Add Patient
+                </button>
             </div>
 
-            <div className="rounded-xl border bg-card shadow-sm">
-                <div className="flex flex-col justify-between gap-4 border-b p-4 sm:flex-row sm:items-center">
-                    <div className="relative w-full sm:max-w-sm">
-                        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Search patients..."
-                            className="h-10 w-full rounded-lg border bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                        />
-                    </div>
+                <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search patients..."
+                    className="w-full rounded-lg border bg-background py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary"
+                />
+            </div>
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="size-4" />
-                        {patients.length} patients
-                    </div>
+            {error && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    {error}
                 </div>
+            )}
 
-                {loading ? (
-                    <div className="p-8 text-center text-sm text-muted-foreground">
-                        Loading patients...
-                    </div>
-                ) : error ? (
-                    <div className="p-8 text-center text-sm text-destructive">
-                        {error}
-                    </div>
-                ) : patients.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-muted-foreground">
-                        No patients found.
-                    </div>
-                ) : (
+            {loading ? (
+                <div className="flex items-center justify-center py-16">
+                    <Loader2 className="size-6 animate-spin" />
+                </div>
+            ) : patients.length === 0 ? (
+                <div className="rounded-xl border bg-card py-16 text-center">
+                    <Users className="mx-auto mb-4 size-10 text-muted-foreground" />
+
+                    <h2 className="text-lg font-semibold">
+                        No patients found
+                    </h2>
+
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Add a patient to see them here.
+                    </p>
+                </div>
+            ) : (
+                <div className="overflow-hidden rounded-xl border bg-card">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
+                        <table className="w-full">
                             <thead className="border-b bg-muted/50">
                                 <tr>
-                                    <th className="px-4 py-3 font-medium">
-                                        Patient ID
+                                    <th className="px-5 py-3 text-left text-sm font-medium">
+                                        Patient
                                     </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Name
+
+                                    <th className="px-5 py-3 text-left text-sm font-medium">
+                                        Date of Birth
                                     </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Email
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Phone
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
+
+                                    <th className="px-5 py-3 text-left text-sm font-medium">
                                         Gender
                                     </th>
-                                    <th className="px-4 py-3 font-medium">
+
+                                    <th className="px-5 py-3 text-left text-sm font-medium">
+                                        Phone
+                                    </th>
+
+                                    <th className="px-5 py-3 text-left text-sm font-medium">
+                                        Email
+                                    </th>
+
+                                    <th className="px-5 py-3 text-right text-sm font-medium">
                                         Action
                                     </th>
                                 </tr>
                             </thead>
 
-                            <tbody>
+                            <tbody className="divide-y">
                                 {patients.map((patient) => (
                                     <tr
                                         key={patient.id}
-                                        className="border-b transition-colors last:border-0 hover:bg-muted/40"
+                                        className="hover:bg-muted/30"
                                     >
-                                        <td className="px-4 py-4 text-muted-foreground">
-                                            {patient.id}
+                                        <td className="px-5 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
+                                                    <Users className="size-4 text-primary" />
+                                                </div>
+
+                                                <div>
+                                                    <p className="font-medium">
+                                                        {patient.name}
+                                                    </p>
+
+                                                    <p className="text-xs text-muted-foreground">
+                                                        ID: {patient.id}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </td>
 
-                                        <td className="px-4 py-4 font-medium">
-                                            {patient.name}
+                                        <td className="px-5 py-4 text-sm">
+                                            {patient.dateOfBirth
+                                                ? new Date(
+                                                      patient.dateOfBirth
+                                                  ).toLocaleDateString()
+                                                : "-"}
                                         </td>
 
-                                        <td className="px-4 py-4">
-                                            {patient.email || "-"}
-                                        </td>
-
-                                        <td className="px-4 py-4">
-                                            {patient.phone || "-"}
-                                        </td>
-
-                                        <td className="px-4 py-4">
+                                        <td className="px-5 py-4 text-sm">
                                             {patient.gender || "-"}
                                         </td>
 
-                                        <td className="px-4 py-4">
+                                        <td className="px-5 py-4 text-sm">
+                                            {patient.phone || "-"}
+                                        </td>
+
+                                        <td className="px-5 py-4 text-sm">
+                                            {patient.email || "-"}
+                                        </td>
+
+                                        <td className="px-5 py-4 text-right">
                                             <button
-    type="button"
-    onClick={() => navigate(`/patients/${patient.id}`)}
-    className="font-medium text-primary hover:underline"
->
-    View
-</button>
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/staff/patients/${patient.id}`
+                                                    )
+                                                }
+                                                className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+                                            >
+                                                <Eye className="size-4" />
+                                                View
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
