@@ -1,6 +1,5 @@
 const prisma = require("../config/prisma");
 
-//Get Patient record belonging to logged-in user.
 const getPatientByUserId = async (userId) => {
   const patient = await prisma.patient.findUnique({
     where: {
@@ -13,216 +12,255 @@ const getPatientByUserId = async (userId) => {
     error.statusCode = 404;
     throw error;
   }
+
   return patient;
 };
 
-//Patient Dashboard
 const getDashboard = async (userId) => {
   const patient = await getPatientByUserId(userId);
-  const now = new Date();
-  const [
-    upcomingAppointments,
-    completedAppointments,
-    cancelledAppointments,
-    nextAppointment,
-  ] = await Promise.all([
-    prisma.appointment.count({
-      where: {
-        patientId: patient.id,
-        startTime: {
-          gte: now,
-        },
-        status: "SCHEDULED",
-      },
-    }),
 
-    prisma.appointment.count({
-      where: {
-        patientId: patient.id,
-        status: "COMPLETED",
-      },
-    }),
-
-    prisma.appointment.count({
-      where: {
-        patientId: patient.id,
-        status: "CANCELLED",
-      },
-    }),
-
-    prisma.appointment.findFirst({
-      where: {
-        patientId: patient.id,
-        startTime: {
-          gte: now,
-        },
-        status: "SCHEDULED",
-      },
-      orderBy: {
-        startTime: "asc",
-      },
-      include: {
-        doctor: {
-          select: {
-            id: true,
-            name: true,
-            specialty: true,
+  const [upcoming, completed, cancelled, nextAppointment] =
+    await Promise.all([
+      prisma.appointment.count({
+        where: {
+          patientId: patient.id,
+          status: "SCHEDULED",
+          startTime: {
+            gte: new Date(),
           },
         },
-      },
-    }),
-  ]);
+      }),
+
+      prisma.appointment.count({
+        where: {
+          patientId: patient.id,
+          status: "COMPLETED",
+        },
+      }),
+
+      prisma.appointment.count({
+        where: {
+          patientId: patient.id,
+          status: "CANCELLED",
+        },
+      }),
+
+      prisma.appointment.findFirst({
+        where: {
+          patientId: patient.id,
+          status: "SCHEDULED",
+          startTime: {
+            gte: new Date(),
+          },
+        },
+        orderBy: {
+          startTime: "asc",
+        },
+        include: {
+          doctor: true,
+        },
+      }),
+    ]);
 
   return {
-    upcomingAppointments,
-    completedAppointments,
-    cancelledAppointments,
+    patient,
+    statistics: {
+      upcoming,
+      completed,
+      cancelled,
+    },
     nextAppointment,
   };
 };
 
-//Get logged-in patient's profile.
 const getProfile = async (userId) => {
   return getPatientByUserId(userId);
 };
 
-//Update patient profile.
 const updateProfile = async (userId, data) => {
   const patient = await getPatientByUserId(userId);
 
-  const allowedFields = [
-    "name",
-    "dateOfBirth",
-    "gender",
-    "phone",
-    "email",
-    "address",
-  ];
-
-  const updateData = {};
-
-  allowedFields.forEach((field) => {
-    if (data[field] !== undefined) {
-      updateData[field] = data[field];
-    }
-  });
-
-  if (updateData.dateOfBirth) {
-    updateData.dateOfBirth = new Date(updateData.dateOfBirth);
-  }
+  const {
+    name,
+    dateOfBirth,
+    gender,
+    phone,
+    email,
+    address,
+  } = data;
 
   return prisma.patient.update({
     where: {
       id: patient.id,
     },
-    data: updateData,
+    data: {
+      ...(name !== undefined && {
+        name: name.trim(),
+      }),
+
+      ...(dateOfBirth !== undefined && {
+        dateOfBirth: dateOfBirth
+          ? new Date(dateOfBirth)
+          : null,
+      }),
+
+      ...(gender !== undefined && {
+        gender: gender?.trim() || null,
+      }),
+
+      ...(phone !== undefined && {
+        phone: phone?.trim() || null,
+      }),
+
+      ...(email !== undefined && {
+        email: email?.trim() || null,
+      }),
+
+      ...(address !== undefined && {
+        address: address?.trim() || null,
+      }),
+    },
   });
 };
 
-// Get all active doctors.
 const getDoctors = async () => {
   return prisma.doctor.findMany({
-    where: {
-      OR: [
-        {
-          userId: null,
-        },
-        {
-          user: {
-            isActive: true,
-          },
-        },
-      ],
-    },
-    select: {
-      id: true,
-      name: true,
-      specialty: true,
-      phone: true,
-      email: true,
-    },
+    
     orderBy: {
       name: "asc",
     },
   });
 };
 
-/**
- * Get doctor availability.
- *
- * With the current schema there is no DoctorAvailability/WorkingHours
- * table, so this returns already-booked appointments for the selected date.
- * The frontend can use these to disable occupied times.
- */
-const getDoctorAvailableSlots = async (doctorId, date) => {
-  const doctor = await prisma.doctor.findUnique({
-    where: {
-      id: doctorId,
-    },
-  });
-
-  if (!doctor) {
-    const error = new Error("Doctor not found");
-    error.statusCode = 404;
-    throw error;
-  }
-
+const getAvailableSlots = async (userId, doctorId, date) => {
   if (!date) {
     const error = new Error("Date is required");
     error.statusCode = 400;
     throw error;
   }
 
-  const startOfDay = new Date(`${date}T00:00:00`);
-  const endOfDay = new Date(`${date}T23:59:59.999`);
+  const doctor = await prisma.doctor.findUnique({
+    where: {
+      id: doctorId,
+    },
+  });
 
-  if (Number.isNaN(startOfDay.getTime()) || Number.isNaN(endOfDay.getTime())) {
+if (!doctor || !doctor.isActive) {
+    const error = new Error("Doctor not found or inactive");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const dayStart = new Date(`${date}T00:00:00`);
+  const dayEnd = new Date(`${date}T23:59:59.999`);
+
+  if (Number.isNaN(dayStart.getTime())) {
     const error = new Error("Invalid date");
     error.statusCode = 400;
     throw error;
   }
 
-  const bookedAppointments = await prisma.appointment.findMany({
+  const appointments = await prisma.appointment.findMany({
     where: {
       doctorId,
       status: {
         not: "CANCELLED",
       },
       startTime: {
-        lte: endOfDay,
+        lt: dayEnd,
       },
       endTime: {
-        gte: startOfDay,
+        gt: dayStart,
       },
     },
     select: {
-      id: true,
       startTime: true,
       endTime: true,
     },
-    orderBy: {
-      startTime: "asc",
-    },
   });
 
-  return {
-    doctor,
-    date,
-    bookedAppointments,
-  };
+  const slots = [];
+
+  const workingStartHour = 9;
+  const workingEndHour = 17;
+  const slotDurationMinutes = 30;
+
+  for (
+    let minutes = workingStartHour * 60;
+    minutes < workingEndHour * 60;
+    minutes += slotDurationMinutes
+  ) {
+    const startHour = Math.floor(minutes / 60);
+    const startMinute = minutes % 60;
+
+    const endMinutes = minutes + slotDurationMinutes;
+    const endHour = Math.floor(endMinutes / 60);
+    const endMinute = endMinutes % 60;
+
+    const startTime = new Date(dayStart);
+
+    startTime.setHours(
+      startHour,
+      startMinute,
+      0,
+      0,
+    );
+
+    const endTime = new Date(dayStart);
+
+    endTime.setHours(
+      endHour,
+      endMinute,
+      0,
+      0,
+    );
+
+    const isBooked = appointments.some(
+      (appointment) => {
+        return (
+          startTime <
+            new Date(appointment.endTime) &&
+          endTime >
+            new Date(appointment.startTime)
+        );
+      },
+    );
+
+    if (!isBooked) {
+      slots.push({
+        startTime: `${String(startHour).padStart(
+          2,
+          "0",
+        )}:${String(startMinute).padStart(2, "0")}`,
+
+        endTime: `${String(endHour).padStart(
+          2,
+          "0",
+        )}:${String(endMinute).padStart(2, "0")}`,
+      });
+    }
+  }
+
+  return slots;
 };
 
-/**
- * Book appointment.
- */
-const bookAppointment = async (
+const createAppointment = async (
   userId,
-  { doctorId, startTime, endTime, reason },
+  data,
 ) => {
   const patient = await getPatientByUserId(userId);
 
+  const {
+    doctorId,
+    startTime,
+    endTime,
+    reason,
+  } = data;
+
   if (!doctorId || !startTime || !endTime) {
-    const error = new Error("doctorId, startTime and endTime are required");
+    const error = new Error(
+      "Doctor, start time and end time are required",
+    );
     error.statusCode = 400;
     throw error;
   }
@@ -230,20 +268,27 @@ const bookAppointment = async (
   const start = new Date(startTime);
   const end = new Date(endTime);
 
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    const error = new Error("Invalid appointment date/time");
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime())
+  ) {
+    const error = new Error("Invalid appointment time");
     error.statusCode = 400;
     throw error;
   }
 
   if (start >= end) {
-    const error = new Error("Appointment end time must be after start time");
+    const error = new Error(
+      "End time must be after start time",
+    );
     error.statusCode = 400;
     throw error;
   }
 
   if (start <= new Date()) {
-    const error = new Error("Appointment must be scheduled for a future time");
+    const error = new Error(
+      "Appointment must be in the future",
+    );
     error.statusCode = 400;
     throw error;
   }
@@ -252,72 +297,60 @@ const bookAppointment = async (
     where: {
       id: doctorId,
     },
-    include: {
-      user: {
-        select: {
-          isActive: true,
-        },
-      },
-    },
   });
 
-  if (!doctor) {
-    const error = new Error("Doctor not found");
+  if (!doctor || !doctor.isActive) {
+    const error = new Error(
+      "Doctor not found or inactive",
+    );
     error.statusCode = 404;
     throw error;
   }
 
-  if (doctor.user && !doctor.user.isActive) {
-    const error = new Error("Doctor is currently inactive");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  // Check doctor overlap.
-  const doctorConflict = await prisma.appointment.findFirst({
-    where: {
-      doctorId,
-      status: {
-        not: "CANCELLED",
+  const doctorConflict =
+    await prisma.appointment.findFirst({
+      where: {
+        doctorId,
+        status: {
+          not: "CANCELLED",
+        },
+        startTime: {
+          lt: end,
+        },
+        endTime: {
+          gt: start,
+        },
       },
-
-      // Existing start < requested end
-      // AND existing end > requested start
-      startTime: {
-        lt: end,
-      },
-      endTime: {
-        gt: start,
-      },
-    },
-  });
+    });
 
   if (doctorConflict) {
     const error = new Error(
-      "Doctor already has an appointment during this time",
+      "Doctor is already booked for this time",
     );
     error.statusCode = 409;
     throw error;
   }
 
-  // Also prevent patient from booking overlapping appointments.
-  const patientConflict = await prisma.appointment.findFirst({
-    where: {
-      patientId: patient.id,
-      status: {
-        not: "CANCELLED",
+  const patientConflict =
+    await prisma.appointment.findFirst({
+      where: {
+        patientId: patient.id,
+        status: {
+          not: "CANCELLED",
+        },
+        startTime: {
+          lt: end,
+        },
+        endTime: {
+          gt: start,
+        },
       },
-      startTime: {
-        lt: end,
-      },
-      endTime: {
-        gt: start,
-      },
-    },
-  });
+    });
 
   if (patientConflict) {
-    const error = new Error("You already have an appointment during this time");
+    const error = new Error(
+      "You already have an appointment during this time",
+    );
     error.statusCode = 409;
     throw error;
   }
@@ -328,24 +361,16 @@ const bookAppointment = async (
       doctorId,
       startTime: start,
       endTime: end,
-      reason: reason || null,
+      reason: reason?.trim() || null,
       status: "SCHEDULED",
     },
     include: {
-      doctor: {
-        select: {
-          id: true,
-          name: true,
-          specialty: true,
-        },
-      },
+      doctor: true,
+      patient: true,
     },
   });
 };
 
-/**
- * Get logged-in patient's appointments.
- */
 const getAppointments = async (userId) => {
   const patient = await getPatientByUserId(userId);
 
@@ -353,49 +378,37 @@ const getAppointments = async (userId) => {
     where: {
       patientId: patient.id,
     },
-    include: {
-      doctor: {
-        select: {
-          id: true,
-          name: true,
-          specialty: true,
-          phone: true,
-          email: true,
-        },
-      },
-    },
     orderBy: {
-      startTime: "desc",
+      startTime: "asc",
+    },
+    include: {
+      doctor: true,
     },
   });
 };
 
-/**
- * Get one appointment.
- */
-const getAppointmentById = async (userId, appointmentId) => {
+const getAppointmentById = async (
+  userId,
+  appointmentId,
+) => {
   const patient = await getPatientByUserId(userId);
 
-  const appointment = await prisma.appointment.findFirst({
-    where: {
-      id: appointmentId,
-      patientId: patient.id,
-    },
-    include: {
-      doctor: {
-        select: {
-          id: true,
-          name: true,
-          specialty: true,
-          phone: true,
-          email: true,
-        },
+  const appointment =
+    await prisma.appointment.findFirst({
+      where: {
+        id: appointmentId,
+        patientId: patient.id,
       },
-    },
-  });
+      include: {
+        doctor: true,
+        patient: true,
+      },
+    });
 
   if (!appointment) {
-    const error = new Error("Appointment not found");
+    const error = new Error(
+      "Appointment not found",
+    );
     error.statusCode = 404;
     throw error;
   }
@@ -403,26 +416,40 @@ const getAppointmentById = async (userId, appointmentId) => {
   return appointment;
 };
 
-/**
- * Cancel appointment.
- */
-const cancelAppointment = async (userId, appointmentId) => {
-  const appointment = await getAppointmentById(userId, appointmentId);
+const cancelAppointment = async (
+  userId,
+  appointmentId,
+) => {
+  const patient = await getPatientByUserId(userId);
+
+  const appointment =
+    await prisma.appointment.findFirst({
+      where: {
+        id: appointmentId,
+        patientId: patient.id,
+      },
+    });
+
+  if (!appointment) {
+    const error = new Error(
+      "Appointment not found",
+    );
+    error.statusCode = 404;
+    throw error;
+  }
 
   if (appointment.status === "CANCELLED") {
-    const error = new Error("Appointment is already cancelled");
+    const error = new Error(
+      "Appointment is already cancelled",
+    );
     error.statusCode = 400;
     throw error;
   }
 
   if (appointment.status === "COMPLETED") {
-    const error = new Error("Completed appointment cannot be cancelled");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (appointment.status === "IN_PROGRESS") {
-    const error = new Error("Appointment in progress cannot be cancelled");
+    const error = new Error(
+      "Completed appointment cannot be cancelled",
+    );
     error.statusCode = 400;
     throw error;
   }
@@ -435,13 +462,8 @@ const cancelAppointment = async (userId, appointmentId) => {
       status: "CANCELLED",
     },
     include: {
-      doctor: {
-        select: {
-          id: true,
-          name: true,
-          specialty: true,
-        },
-      },
+      doctor: true,
+      patient: true,
     },
   });
 };
@@ -451,8 +473,8 @@ module.exports = {
   getProfile,
   updateProfile,
   getDoctors,
-  getDoctorAvailableSlots,
-  bookAppointment,
+  getAvailableSlots,
+  createAppointment,
   getAppointments,
   getAppointmentById,
   cancelAppointment,

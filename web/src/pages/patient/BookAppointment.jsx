@@ -1,157 +1,312 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 export default function BookAppointment() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    doctor: "",
-    date: "",
-    time: "",
-    reason: "",
+  const [doctorId, setDoctorId] = useState("");
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const doctorsQuery = useQuery({
+    queryKey: ["patient-doctors"],
+    queryFn: async () => {
+      const response = await api.get("/api/patient/doctors");
+
+      return (
+        response?.data?.doctors ||
+        response?.data ||
+        response?.doctors ||
+        []
+      );
+    },
   });
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
+  const slotsQuery = useQuery({
+    queryKey: ["doctor-slots", doctorId, date],
+    queryFn: async () => {
+      const response = await api.get(
+        `/api/patient/doctors/${doctorId}/available-slots?date=${date}`,
+      );
 
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+      return (
+        response?.data?.slots ||
+        response?.data ||
+        response?.slots ||
+        []
+      );
+    },
+    enabled: Boolean(doctorId && date),
+  });
+
+  const bookingMutation = useMutation({
+    mutationFn: async () => {
+      return api.post("/api/patient/appointments", {
+        doctorId,
+        startTime: `${date}T${startTime}`,
+        endTime: `${date}T${endTime}`,
+        reason: reason.trim() || null,
+      });
+    },
+    onSuccess: () => {
+      setSuccess("Appointment booked successfully.");
+      setError("");
+
+      setTimeout(() => {
+        navigate("/patient/appointments");
+      }, 1000);
+    },
+    onError: (err) => {
+      setError(err.message || "Failed to book appointment");
+      setSuccess("");
+    },
+  });
+
+  const doctors = Array.isArray(doctorsQuery.data)
+    ? doctorsQuery.data
+    : [];
+
+  const slots = Array.isArray(slotsQuery.data)
+    ? slotsQuery.data
+    : [];
+
+  const handleDoctorChange = (event) => {
+    setDoctorId(event.target.value);
+    setStartTime("");
+    setEndTime("");
+    setError("");
+    setSuccess("");
+  };
+
+  const handleDateChange = (event) => {
+    setDate(event.target.value);
+    setStartTime("");
+    setEndTime("");
+    setError("");
+    setSuccess("");
+  };
+
+  const handleSlotChange = (event) => {
+    const selectedStartTime = event.target.value;
+
+    const selectedSlot = slots.find(
+      (slot) =>
+        (slot.startTime || slot.start) === selectedStartTime,
+    );
+
+    setStartTime(selectedStartTime);
+    setEndTime(
+      selectedSlot?.endTime ||
+        selectedSlot?.end ||
+        "",
+    );
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    console.log("Appointment:", formData);
+    setError("");
+    setSuccess("");
+
+    if (!doctorId) {
+      setError("Please select a doctor.");
+      return;
+    }
+
+    if (!date) {
+      setError("Please select an appointment date.");
+      return;
+    }
+
+    if (!startTime || !endTime) {
+      setError("Please select an available time.");
+      return;
+    }
+
+    bookingMutation.mutate();
   };
 
+  const formatTime = (value) => {
+    if (!value) {
+      return "";
+    }
+
+    const [hours, minutes] = value.split(":");
+    const hour = Number(hours);
+
+    if (Number.isNaN(hour)) {
+      return value;
+    }
+
+    const period = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+
+    return `${displayHour}:${minutes} ${period}`;
+  };
+
+  const today = new Date()
+    .toISOString()
+    .split("T")[0];
+
   return (
-    <div className="mx-auto max-w-4xl">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+    <div className="max-w-3xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold">
           Book Appointment
         </h1>
 
-        <p className="mt-1 text-sm text-gray-500">
-          Choose a doctor, date and time for your visit.
+        <p className="mt-2 text-muted-foreground">
+          Select a doctor, date and available time.
         </p>
       </div>
 
+      {error && (
+        <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {success}
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit}
-        className="mt-7 rounded-xl border bg-white p-6 shadow-sm"
+        className="space-y-6 rounded-xl border bg-background p-6"
       >
         <div>
-          <label
-            htmlFor="doctor"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
-            Select Doctor <span className="text-red-500">*</span>
+          <label className="mb-2 block text-sm font-medium">
+            Doctor
           </label>
 
           <select
-            id="doctor"
-            name="doctor"
-            value={formData.doctor}
-            onChange={handleChange}
-            required
-            className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            value={doctorId}
+            onChange={handleDoctorChange}
+            disabled={doctorsQuery.isLoading}
+            className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="">Select a doctor</option>
-            <option value="anil">
-              Dr. Anil Kumar (General Physician)
+            <option value="">
+              {doctorsQuery.isLoading
+                ? "Loading doctors..."
+                : "Select a doctor"}
             </option>
-            <option value="priya">
-              Dr. Priya Sharma (Dermatologist)
-            </option>
-            <option value="michael">
-              Dr. Michael Brown (Cardiologist)
-            </option>
+
+            {doctors.map((doctor) => (
+              <option key={doctor.id} value={doctor.id}>
+                {doctor.name} — {doctor.specialty}
+              </option>
+            ))}
           </select>
+
+          {doctorsQuery.isError && (
+            <p className="mt-2 text-sm text-red-600">
+              {doctorsQuery.error?.message ||
+                "Failed to load doctors"}
+            </p>
+          )}
         </div>
 
-        <div className="mt-5 grid gap-5 md:grid-cols-2">
-          <div>
-            <label
-              htmlFor="date"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
-              Select Date <span className="text-red-500">*</span>
-            </label>
+        <div>
+          <label className="mb-2 block text-sm font-medium">
+            Appointment Date
+          </label>
 
-            <input
-              id="date"
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              required
-              className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="time"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
-              Select Time <span className="text-red-500">*</span>
-            </label>
-
-            <select
-              id="time"
-              name="time"
-              value={formData.time}
-              onChange={handleChange}
-              required
-              className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            >
-              <option value="">Select time</option>
-              <option value="09:00">09:00 AM - 09:30 AM</option>
-              <option value="10:00">10:00 AM - 10:30 AM</option>
-              <option value="11:00">11:00 AM - 11:30 AM</option>
-              <option value="14:00">02:00 PM - 02:30 PM</option>
-              <option value="15:00">03:00 PM - 03:30 PM</option>
-            </select>
-          </div>
+          <input
+            type="date"
+            value={date}
+            min={today}
+            onChange={handleDateChange}
+            className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+          />
         </div>
 
-        <div className="mt-5">
-          <label
-            htmlFor="reason"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
+        {doctorId && date && (
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Available Time
+            </label>
+
+            {slotsQuery.isLoading ? (
+              <p className="text-sm text-muted-foreground">
+                Loading available slots...
+              </p>
+            ) : slotsQuery.isError ? (
+              <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {slotsQuery.error?.message ||
+                  "Failed to load available slots"}
+              </p>
+            ) : slots.length === 0 ? (
+              <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                No available slots for this date.
+              </div>
+            ) : (
+              <select
+                value={startTime}
+                onChange={handleSlotChange}
+                className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">
+                  Select a time
+                </option>
+
+                {slots.map((slot, index) => {
+                  const start =
+                    slot.startTime || slot.start;
+
+                  const end =
+                    slot.endTime || slot.end;
+
+                  return (
+                    <option
+                      key={`${start}-${end}-${index}`}
+                      value={start}
+                    >
+                      {formatTime(start)} -{" "}
+                      {formatTime(end)}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
+          </div>
+        )}
+
+        <div>
+          <label className="mb-2 block text-sm font-medium">
             Reason for Visit
           </label>
 
           <textarea
-            id="reason"
-            name="reason"
-            rows={5}
-            value={formData.reason}
-            onChange={handleChange}
-            placeholder="Enter reason for your visit"
-            className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            value={reason}
+            onChange={(event) =>
+              setReason(event.target.value)
+            }
+            placeholder="Describe your reason for the appointment"
+            rows={4}
+            className="w-full resize-none rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
-        <div className="mt-7 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/patient/dashboard")}
-            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Book Appointment
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={
+            bookingMutation.isPending ||
+            doctorsQuery.isLoading
+          }
+          className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {bookingMutation.isPending
+            ? "Booking..."
+            : "Book Appointment"}
+        </button>
       </form>
     </div>
   );
