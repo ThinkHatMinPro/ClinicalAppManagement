@@ -4,17 +4,12 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 
-/* ============================================================
-   LIGHT MODE
-   Medical Blue Clinic Theme
-   ============================================================ */
+/* LIGHT MODE */
 
 :root {
   --radius: 0.625rem;
 
-  /* ----------------------------------------------------------
-     Base
-     ---------------------------------------------------------- */
+  /* Base */
 
   /* Very subtle cool blue-white */
   --background: oklch(0.985 0.004 245);
@@ -23,9 +18,7 @@
   --foreground: oklch(0.20 0.025 250);
 
 
-  /* ----------------------------------------------------------
-     Surfaces
-     ---------------------------------------------------------- */
+  /* Surfaces */
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.20 0.025 250);
@@ -34,45 +27,35 @@
   --popover-foreground: oklch(0.20 0.025 250);
 
 
-  /* ----------------------------------------------------------
-     Primary - Medical Blue
-     Main buttons, links, active navigation, focus states
-     ---------------------------------------------------------- */
+  /* Primary - Medical Blue
+     Main buttons, links, active navigation, focus states */
 
   --primary: oklch(0.58 0.16 245);
   --primary-foreground: oklch(0.99 0 0);
 
 
-  /* ----------------------------------------------------------
-     Secondary - Soft Medical Blue
-     Secondary buttons and subtle UI elements
-     ---------------------------------------------------------- */
+  /* Secondary - Soft Medical Blue
+     Secondary buttons and subtle UI elements */
 
   --secondary: oklch(0.95 0.025 245);
   --secondary-foreground: oklch(0.35 0.11 245);
 
 
-  /* ----------------------------------------------------------
-     Accent - Medical Blue Highlight
-     Hover, selected items, active menu backgrounds
-     ---------------------------------------------------------- */
+  /* Accent - Medical Blue Highlight
+     Hover, selected items, active menu backgrounds */
 
   --accent: oklch(0.93 0.04 245);
   --accent-foreground: oklch(0.32 0.13 245);
 
 
-  /* ----------------------------------------------------------
-     Muted
-     Disabled areas, subtle backgrounds, secondary text
-     ---------------------------------------------------------- */
+  /* Muted
+     Disabled areas, subtle backgrounds, secondary text */
 
   --muted: oklch(0.96 0.008 245);
   --muted-foreground: oklch(0.50 0.025 245);
 
 
-  /* ----------------------------------------------------------
-     Semantic Status Colors
-     ---------------------------------------------------------- */
+  /* Semantic Status Colors */
 
   /* Completed / Confirmed / Active */
   --success: oklch(0.60 0.15 150);
