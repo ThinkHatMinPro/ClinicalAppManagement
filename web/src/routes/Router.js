@@ -14,10 +14,13 @@ function App() {
   return (
     <Routes>
       <Route path="/patient" element={<PatientLayout />}>
+        
         <Route
-          index
-          element={<Navigate to="dashboard" replace />}
-        />
+  path="/patient"
+  element={
+    <PatientDashboard />
+  }
+/>
 
         <Route
           path="dashboard"

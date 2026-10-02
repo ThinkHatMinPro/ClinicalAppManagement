@@ -1,35 +1,28 @@
 import { useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
+import api from "@/lib/api";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RoleSelector } from "@/components/ui/roleselector";
 
-/* =========================================================
-   VALIDATION
-========================================================= */
-
 const loginSchema = z.object({
   role: z.enum(["PATIENT", "DOCTOR", "STAFF"], {
     message: "Please select your role",
   }),
-
   email: z
     .string()
     .min(1, "Email is required")
     .email("Enter a valid email address"),
-
   password: z.string().min(1, "Password is required"),
 });
-
-/* =========================================================
-   GREETING
-========================================================= */
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -39,10 +32,6 @@ function getGreeting() {
 
   return "Good evening";
 }
-
-/* =========================================================
-   LOGIN FORM
-========================================================= */
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -58,7 +47,6 @@ export default function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
-
     defaultValues: {
       role: "",
       email: "",
@@ -68,10 +56,6 @@ export default function LoginForm() {
 
   const selectedRole = watch("role");
 
-  /* =========================================================
-     SUBMIT
-  ========================================================= */
-
   const onSubmit = async (data) => {
     setNotice("");
 
@@ -79,42 +63,30 @@ export default function LoginForm() {
       const payload = {
         email: data.email.trim().toLowerCase(),
         password: data.password,
-        role: data.role,
       };
 
-      console.log("Login data:", payload);
+      const response = await api.post("/api/auth/login", payload);
 
-      const response = await fetch(
-        "http://localhost:5000/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        },
-      );
+      const result = response.data;
 
-      const result = await response.json();
+      const user = result.user;
+      const token = result.token;
 
-      if (!response.ok) {
+      if (!token || !user) {
+        throw new Error("Invalid login response from server");
+      }
+
+      if (user.role !== data.role) {
         throw new Error(
-          result.message || "Invalid email, password, or role",
+          `This account is registered as ${user.role}. Please select the correct role.`,
         );
       }
 
-      if (result.token) {
-        localStorage.setItem("token", result.token);
-      }
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", user.role);
+      localStorage.setItem("user", JSON.stringify(user));
 
-      const userRole =
-        result.user?.role || result.role || data.role;
-
-      localStorage.setItem("role", userRole);
-
-      /* ROLE BASED REDIRECT */
-
-      switch (userRole) {
+      switch (user.role) {
         case "PATIENT":
           navigate("/patient/dashboard");
           break;
@@ -140,9 +112,6 @@ export default function LoginForm() {
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="w-full max-w-sm">
-
-        {/* HEADING */}
-
         <div className="mb-7">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Welcome back
@@ -153,19 +122,12 @@ export default function LoginForm() {
           </p>
         </div>
 
-        {/* FORM */}
-
         <form
           onSubmit={handleSubmit(onSubmit)}
           noValidate
           className="space-y-5"
         >
-
-          {/* REGISTER ROLE WITH REACT HOOK FORM */}
-
           <input type="hidden" {...register("role")} />
-
-          {/* ROLE SELECTOR */}
 
           <RoleSelector
             value={selectedRole}
@@ -177,8 +139,6 @@ export default function LoginForm() {
             }
             error={errors.role?.message}
           />
-
-          {/* EMAIL */}
 
           <div className="space-y-1.5">
             <Label htmlFor="login-email" className="text-xs">
@@ -205,12 +165,8 @@ export default function LoginForm() {
             )}
           </div>
 
-          {/* PASSWORD */}
-
           <div className="space-y-1.5">
-
             <div className="flex items-center justify-between">
-
               <Label
                 htmlFor="login-password"
                 className="text-xs"
@@ -224,11 +180,9 @@ export default function LoginForm() {
               >
                 Forgot password?
               </Link>
-
             </div>
 
             <div className="relative">
-
               <Input
                 id="login-password"
                 type={showPassword ? "text" : "password"}
@@ -257,7 +211,6 @@ export default function LoginForm() {
                   <Eye className="size-4" />
                 )}
               </button>
-
             </div>
 
             {errors.password && (
@@ -268,24 +221,18 @@ export default function LoginForm() {
                 {errors.password.message}
               </p>
             )}
-
           </div>
-
-          {/* NOTICE */}
 
           {notice && (
             <p
-              role="status"
+              role="alert"
               className="rounded-md border border-border bg-muted p-2.5 text-xs text-muted-foreground"
             >
               {notice}
             </p>
           )}
 
-          {/* SIGN IN */}
-
           <div className="pt-2">
-
             <Button
               type="submit"
               className="h-9 w-full"
@@ -297,11 +244,10 @@ export default function LoginForm() {
 
               {isSubmitting ? "Signing in..." : "Sign in"}
             </Button>
-
           </div>
-
         </form>
       </div>
     </div>
   );
 }
+
