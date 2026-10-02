@@ -17,7 +17,7 @@ export default function BookAppointment() {
   const doctorsQuery = useQuery({
     queryKey: ["patient-doctors"],
     queryFn: async () => {
-      const response = await api.get("/api/patient/doctors");
+      const response = await api.get("/patient/doctors");
 
       return (
         response?.data?.doctors ||

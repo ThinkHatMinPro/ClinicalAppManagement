@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-
+import StaffLayout from "./components/staff/StaffLayout";
 import AuthPage from "./pages/auth/AuthPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import AppLayout from "./components/layout/AppLayout";
@@ -10,17 +10,16 @@ import BookAppointment from "@/pages/patient/BookAppointment";
 import MyAppointments from "@/pages/patient/MyAppointments";
 import MyProfile from "@/pages/patient/MyProfile";
 
-function Placeholder({ title }) {
-    return (
-        <div>
-            <h1 className="text-2xl font-semibold">{title}</h1>
-
-            <p className="mt-2 text-muted-foreground">
-                This page will be built in a later phase.
-            </p>
-        </div>
-    );
-}
+import StaffDashboard from "./pages/staff/StaffDashboard";
+import Patients from "./pages/staff/Patients";
+import PatientForm from "./pages/staff/PatientForm";
+import PatientDetails from "./pages/staff/PatientDetails";
+import Doctors from "./pages/staff/Doctors";
+import DoctorForm from "./pages/staff/DoctorForm";
+import DoctorDetails from "./pages/staff/DoctorDetails";
+import Appointments from "./pages/staff/Appointments";
+import AppointmentForm from "./pages/staff/AppointmentForm";
+import AppointmentDetails from "./pages/staff/AppointmentDetails";
 
 export default function App() {
     return (
@@ -32,23 +31,6 @@ export default function App() {
                     path="/forgot-password"
                     element={<ForgotPasswordPage />}
                 />
-
-                <Route element={<AppLayout />}>
-                    <Route
-                        path="/appointments"
-                        element={<Placeholder title="Appointments" />}
-                    />
-
-                    <Route
-                        path="/patients"
-                        element={<Placeholder title="Patients" />}
-                    />
-
-                    <Route
-                        path="/doctors"
-                        element={<Placeholder title="Doctors" />}
-                    />
-                </Route>
 
                 <Route path="/patient" element={<PatientLayout />}>
                     <Route
@@ -76,11 +58,62 @@ export default function App() {
                         element={<MyProfile />}
                     />
                 </Route>
+<Route path="/staff" element={<StaffLayout />}>
+    <Route
+        index
+        element={<Navigate to="dashboard" replace />}
+    />
 
-                <Route
-                    path="*"
-                    element={<Navigate to="/auth" replace />}
-                />
+    <Route
+        path="dashboard"
+        element={<StaffDashboard />}
+    />
+
+    <Route
+        path="patients"
+        element={<Patients />}
+    />
+
+    <Route
+        path="patients/new"
+        element={<PatientForm />}
+    />
+
+    <Route
+        path="patients/:id"
+        element={<PatientDetails />}
+    />
+
+    <Route
+        path="doctors"
+        element={<Doctors />}
+    />
+
+    <Route
+        path="doctors/new"
+        element={<DoctorForm />}
+    />
+
+    <Route
+        path="doctors/:id"
+        element={<DoctorDetails />}
+    />
+
+    <Route
+        path="appointments"
+        element={<Appointments />}
+    />
+
+    <Route
+        path="appointments/new"
+        element={<AppointmentForm />}
+    />
+
+    <Route
+        path="appointments/:id"
+        element={<AppointmentDetails />}
+    />
+</Route>
             </Routes>
         </BrowserRouter>
     );

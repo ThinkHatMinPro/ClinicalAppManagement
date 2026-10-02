@@ -12,7 +12,7 @@ const PatientDashboard = () => {
         setLoading(true);
         setError("");
 
-        const response = await api.get("/api/patient/dashboard");
+        const response = await api.get("/patient/dashboard");
 
         setDashboard(response.data);
       } catch (err) {

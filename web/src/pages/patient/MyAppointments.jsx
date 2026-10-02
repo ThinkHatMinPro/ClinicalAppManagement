@@ -7,7 +7,7 @@ export default function MyAppointments() {
   const appointmentsQuery = useQuery({
     queryKey: ["patient-appointments"],
     queryFn: async () => {
-      const response = await api.get("/api/patient/appointments");
+      const response = await api.get("/patient/appointments");
 
       return (
         response?.data?.appointments ||

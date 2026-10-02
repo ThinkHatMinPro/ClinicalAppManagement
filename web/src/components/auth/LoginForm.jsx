@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,43 +64,35 @@ export default function LoginForm() {
         password: data.password,
       };
 
-      const response = await api.post("/api/auth/login", payload);
+      const result = await api.post("/auth/login", payload);
 
-      const result = response.data;
+const user = result.data?.user;
+const token = result.data?.token;
 
-      const user = result.user;
-      const token = result.token;
+if (!user || !token) {
+    throw new Error("Invalid login response from server");
+}
 
-      if (!token || !user) {
-        throw new Error("Invalid login response from server");
-      }
+localStorage.setItem("token", token);
+localStorage.setItem("role", user.role);
+localStorage.setItem("user", JSON.stringify(user));
 
-      if (user.role !== data.role) {
-        throw new Error(
-          `This account is registered as ${user.role}. Please select the correct role.`,
-        );
-      }
+switch (user.role) {
+    case "PATIENT":
+        navigate("/patient/dashboard");
+        break;
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", user.role);
-      localStorage.setItem("user", JSON.stringify(user));
+    case "DOCTOR":
+        navigate("/doctor/dashboard");
+        break;
 
-      switch (user.role) {
-        case "PATIENT":
-          navigate("/patient/dashboard");
-          break;
+    case "STAFF":
+        navigate("/staff/dashboard");
+        break;
 
-        case "DOCTOR":
-          navigate("/doctor/dashboard");
-          break;
-
-        case "STAFF":
-          navigate("/staff/dashboard");
-          break;
-
-        default:
-          throw new Error("Invalid user role");
-      }
+    default:
+        throw new Error("Invalid user role");
+}
     } catch (error) {
       setNotice(
         error.message || "Unable to sign in. Please try again.",
@@ -156,10 +147,7 @@ export default function LoginForm() {
             />
 
             {errors.email && (
-              <p
-                role="alert"
-                className="text-xs text-destructive"
-              >
+              <p role="alert" className="text-xs text-destructive">
                 {errors.email.message}
               </p>
             )}
@@ -167,10 +155,7 @@ export default function LoginForm() {
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label
-                htmlFor="login-password"
-                className="text-xs"
-              >
+              <Label htmlFor="login-password" className="text-xs">
                 Password
               </Label>
 
@@ -195,14 +180,10 @@ export default function LoginForm() {
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowPassword((value) => !value)
-                }
+                onClick={() => setShowPassword((value) => !value)}
                 className="absolute inset-y-0 right-0 flex items-center rounded-md px-3 text-muted-foreground transition-colors hover:text-primary"
                 aria-label={
-                  showPassword
-                    ? "Hide password"
-                    : "Show password"
+                  showPassword ? "Hide password" : "Show password"
                 }
               >
                 {showPassword ? (
@@ -214,10 +195,7 @@ export default function LoginForm() {
             </div>
 
             {errors.password && (
-              <p
-                role="alert"
-                className="text-xs text-destructive"
-              >
+              <p role="alert" className="text-xs text-destructive">
                 {errors.password.message}
               </p>
             )}
@@ -250,4 +228,3 @@ export default function LoginForm() {
     </div>
   );
 }
-

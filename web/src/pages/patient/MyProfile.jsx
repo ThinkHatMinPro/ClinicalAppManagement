@@ -21,7 +21,7 @@ export default function MyProfile() {
   const profileQuery = useQuery({
     queryKey: ["patient-profile"],
     queryFn: async () => {
-      const response = await api.get("/api/patient/profile");
+      const response = await api.get("/patient/profile");
 
       return (
         response?.data?.patient ||
