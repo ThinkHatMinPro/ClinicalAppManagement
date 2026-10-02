@@ -1,5 +1,3 @@
-// src/guards/authGuard.js
-
 const jwt = require("jsonwebtoken");
 
 const authGuard = (req, res, next) => {
@@ -20,7 +18,10 @@ const authGuard = (req, res, next) => {
       process.env.JWT_SECRET
     );
 
-    req.user = decoded;
+    req.user = {
+      id: decoded.id || decoded.userId,
+      role: decoded.role,
+    };
 
     next();
   } catch (error) {
