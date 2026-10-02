@@ -10,6 +10,12 @@ import BookAppointment from "@/pages/patient/BookAppointment";
 import MyAppointments from "@/pages/patient/MyAppointments";
 import MyProfile from "@/pages/patient/MyProfile";
 
+// Doctor
+import DoctorLayout from "@/components/doctor/DoctorLayout";
+import DoctorDashboard from "@/pages/doctor/DoctorDashboard";
+import DoctorAppointments from "@/pages/doctor/MyAppointments";
+import AppointmentDetails from "@/pages/doctor/AppointmentDetails";
+
 function Placeholder({ title }) {
     return (
         <div>
@@ -26,6 +32,7 @@ export default function App() {
     return (
         <BrowserRouter>
             <Routes>
+                {/* Authentication */}
                 <Route path="/auth" element={<AuthPage />} />
 
                 <Route
@@ -33,6 +40,7 @@ export default function App() {
                     element={<ForgotPasswordPage />}
                 />
 
+                {/* Existing application routes */}
                 <Route element={<AppLayout />}>
                     <Route
                         path="/appointments"
@@ -50,6 +58,7 @@ export default function App() {
                     />
                 </Route>
 
+                {/* Patient Portal */}
                 <Route path="/patient" element={<PatientLayout />}>
                     <Route
                         index
@@ -77,6 +86,30 @@ export default function App() {
                     />
                 </Route>
 
+                {/* Doctor Portal */}
+                <Route path="/doctor" element={<DoctorLayout />}>
+                    <Route
+                        index
+                        element={<Navigate to="dashboard" replace />}
+                    />
+
+                    <Route
+                        path="dashboard"
+                        element={<DoctorDashboard />}
+                    />
+
+                    <Route
+                        path="appointments"
+                        element={<DoctorAppointments />}
+                    />
+
+                    <Route
+                        path="appointments/:id"
+                        element={<AppointmentDetails />}
+                    />
+                </Route>
+
+                {/* Fallback */}
                 <Route
                     path="*"
                     element={<Navigate to="/auth" replace />}
