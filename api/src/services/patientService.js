@@ -132,7 +132,7 @@ const getDoctors = async () => {
   });
 };
 
-const getDoctorAvailableSlots = async (userId, doctorId, date) => {
+const getDoctorAvailableSlots = async (doctorId, date) => {
   if (!date) {
     const error = new Error("Date is required");
     error.statusCode = 400;
@@ -145,7 +145,7 @@ const getDoctorAvailableSlots = async (userId, doctorId, date) => {
     },
   });
 
-if (!doctor || !doctor.isActive) {
+if (!doctor) {
     const error = new Error("Doctor not found or inactive");
     error.statusCode = 404;
     throw error;
@@ -244,10 +244,7 @@ if (!doctor || !doctor.isActive) {
   return slots;
 };
 
-const createAppointment = async (
-  userId,
-  data,
-) => {
+  const bookAppointment = async (userId, data) => {
   const patient = await getPatientByUserId(userId);
 
   const {
@@ -259,7 +256,7 @@ const createAppointment = async (
 
   if (!doctorId || !startTime || !endTime) {
     const error = new Error(
-      "Doctor, start time and end time are required",
+      "Doctor, start time and end time are required"
     );
     error.statusCode = 400;
     throw error;
@@ -279,7 +276,7 @@ const createAppointment = async (
 
   if (start >= end) {
     const error = new Error(
-      "End time must be after start time",
+      "End time must be after start time"
     );
     error.statusCode = 400;
     throw error;
@@ -287,7 +284,7 @@ const createAppointment = async (
 
   if (start <= new Date()) {
     const error = new Error(
-      "Appointment must be in the future",
+      "Appointment must be in the future"
     );
     error.statusCode = 400;
     throw error;
@@ -299,14 +296,15 @@ const createAppointment = async (
     },
   });
 
-  if (!doctor || !doctor.isActive) {
-    const error = new Error(
-      "Doctor not found or inactive",
-    );
+  if (!doctor) {
+    const error = new Error("Doctor not found");
     error.statusCode = 404;
     throw error;
   }
 
+  // keep your doctorConflict,
+  // patientConflict and prisma.appointment.create
+  // code exactly as it already is below
   const doctorConflict =
     await prisma.appointment.findFirst({
       where: {
@@ -474,7 +472,7 @@ module.exports = {
   updateProfile,
   getDoctors,
   getDoctorAvailableSlots,
-  createAppointment,
+  bookAppointment,
   getAppointments,
   getAppointmentById,
   cancelAppointment,
