@@ -1,266 +1,575 @@
 import {
+    useEffect,
+    useState,
+} from "react";
+
+import {
+    useNavigate,
+    useParams,
+} from "react-router-dom";
+
+import {
+    ArrowLeft,
     CalendarDays,
-    Eye,
-    Loader2,
-    Plus,
-    Search,
+    Clock,
+    Mail,
+    MapPin,
+    Phone,
+    Stethoscope,
+    User,
 } from "lucide-react";
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "@/lib/api";
+import api from "../../lib/api";
 
-const formatDate = (value) => {
-    if (!value) return "-";
-
-    return new Date(value).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    });
-};
-
-const formatTime = (value) => {
-    if (!value) return "-";
-
-    return new Date(value).toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-};
-
-export default function Appointments() {
+export default function AppointmentDetails() {
     const navigate = useNavigate();
 
-    const [appointments, setAppointments] = useState([]);
-    const [search, setSearch] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const { id } = useParams();
+
+    const [appointment, setAppointment] =
+        useState(null);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const [error, setError] =
+        useState("");
+
+    // =========================================================
+    // FETCH APPOINTMENT
+    // =========================================================
 
     useEffect(() => {
         let cancelled = false;
 
-        const timer = setTimeout(async () => {
-            try {
-                const result = await api.get(
-                    `/staff/appointments?search=${encodeURIComponent(search)}`
-                );
+        const fetchAppointment =
+            async () => {
+                try {
+                    setLoading(true);
+                    setError("");
 
-                console.log("Appointments response:", result);
+                    console.log(
+                        "Appointment details ID:",
+                        id
+                    );
 
-                if (cancelled) return;
+                    if (
+                        !id ||
+                        id === "undefined" ||
+                        id === "null"
+                    ) {
+                        throw new Error(
+                            "Invalid appointment ID"
+                        );
+                    }
 
-                setAppointments(
-                    result.data?.appointments || []
-                );
+                    const result =
+                        await api.get(
+                            `/staff/appointments/${id}`
+                        );
 
-                setError("");
-            } catch (err) {
-                if (cancelled) return;
+                    console.log(
+                        "Appointment details response:",
+                        result
+                    );
 
-                console.error(
-                    "Fetch appointments error:",
-                    err
-                );
+                    if (!cancelled) {
+                        setAppointment(
+                            result.data
+                        );
+                    }
+                } catch (err) {
+                    console.error(
+                        "Fetch appointment error:",
+                        err
+                    );
 
-                setError(
-                    err.message ||
-                    "Failed to fetch appointments"
-                );
+                    if (!cancelled) {
+                        setAppointment(
+                            null
+                        );
 
-                setAppointments([]);
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
+                        setError(
+                            err.message ||
+                                "Failed to load appointment"
+                        );
+                    }
+                } finally {
+                    if (!cancelled) {
+                        setLoading(
+                            false
+                        );
+                    }
                 }
-            }
-        }, 300);
+            };
+
+        fetchAppointment();
 
         return () => {
             cancelled = true;
-            clearTimeout(timer);
         };
-    }, [search]);
+    }, [id]);
 
-    return (
-        <div className="space-y-6">
+    // =========================================================
+    // DATE
+    // =========================================================
 
-            {/* PAGE HEADER */}
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+    const formatDate = (
+        dateValue
+    ) => {
+        if (!dateValue) {
+            return "-";
+        }
 
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        Appointments
-                    </h1>
+        const date = new Date(
+            dateValue
+        );
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+            return "-";
+        }
+
+        return date.toLocaleDateString(
+            "en-IN",
+            {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+            }
+        );
+    };
+
+    // =========================================================
+    // TIME
+    // =========================================================
+
+    const formatTime = (
+        dateValue
+    ) => {
+        if (!dateValue) {
+            return "-";
+        }
+
+        const date = new Date(
+            dateValue
+        );
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+            return "-";
+        }
+
+        return date.toLocaleTimeString(
+            "en-IN",
+            {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+            }
+        );
+    };
+
+    // =========================================================
+    // STATUS
+    // =========================================================
+
+    const getStatusClass = (
+        status
+    ) => {
+        switch (status) {
+            case "SCHEDULED":
+                return "bg-blue-100 text-blue-700";
+
+            case "IN_PROGRESS":
+                return "bg-yellow-100 text-yellow-700";
+
+            case "COMPLETED":
+                return "bg-green-100 text-green-700";
+
+            case "CANCELLED":
+                return "bg-red-100 text-red-700";
+
+            default:
+                return "bg-gray-100 text-gray-700";
+        }
+    };
+
+    // =========================================================
+    // LOADING
+    // =========================================================
+
+    if (loading) {
+        return (
+            <div className="flex min-h-[400px] items-center justify-center">
+                <div className="text-center">
+                    <div className="mx-auto mb-4 size-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
 
                     <p className="text-sm text-muted-foreground">
-                        Manage clinic appointments.
+                        Loading appointment...
                     </p>
                 </div>
+            </div>
+        );
+    }
 
+    // =========================================================
+    // ERROR
+    // =========================================================
+
+    if (
+        error ||
+        !appointment
+    ) {
+        return (
+            <div className="space-y-6">
                 <button
                     type="button"
                     onClick={() =>
-                        navigate("/staff/appointments/new")
+                        navigate(
+                            "/staff/appointments"
+                        )
                     }
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                 >
-                    <Plus className="size-4" />
-                    Add Appointment
+                    <ArrowLeft className="size-4" />
+
+                    Back to Appointments
                 </button>
+
+                <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+                    <h2 className="text-lg font-semibold text-red-700">
+                        Appointment not
+                        found
+                    </h2>
+
+                    <p className="mt-2 text-sm text-red-600">
+                        {error ||
+                            "Unable to find this appointment."}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // =========================================================
+    // DATA
+    // =========================================================
+
+    const patient =
+        appointment.patient || {};
+
+    const doctor =
+        appointment.doctor || {};
+
+    // =========================================================
+    // UI
+    // =========================================================
+
+    return (
+        <div className="space-y-6">
+            {/* BACK */}
+
+            <button
+                type="button"
+                onClick={() =>
+                    navigate(
+                        "/staff/appointments"
+                    )
+                }
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:underline"
+            >
+                <ArrowLeft className="size-4" />
+
+                Back to Appointments
+            </button>
+
+            {/* HEADER */}
+
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">
+                        Appointment
+                        Details
+                    </h1>
+
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        View appointment
+                        information
+                    </p>
+                </div>
+
+                <span
+                    className={`inline-flex w-fit rounded-full px-4 py-2 text-sm font-semibold ${getStatusClass(
+                        appointment.status
+                    )}`}
+                >
+                    {appointment.status ||
+                        "-"}
+                </span>
             </div>
 
-            {/* APPOINTMENTS CARD */}
+            {/* APPOINTMENT INFORMATION */}
+
             <div className="rounded-xl border bg-card shadow-sm">
+                <div className="border-b px-6 py-4">
+                    <div className="flex items-center gap-2">
+                        <CalendarDays className="size-5 text-primary" />
 
-                {/* SEARCH */}
-                <div className="flex flex-col justify-between gap-4 border-b p-4 sm:flex-row sm:items-center">
-
-                    <div className="relative w-full sm:max-w-sm">
-
-                        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) =>
-                                setSearch(e.target.value)
-                            }
-                            placeholder="Search appointments..."
-                            className="h-10 w-full rounded-lg border bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CalendarDays className="size-4" />
-
-                        {appointments.length} appointments
+                        <h2 className="font-semibold">
+                            Appointment
+                            Information
+                        </h2>
                     </div>
                 </div>
 
-                {/* CONTENT */}
-                {loading ? (
-                    <div className="flex items-center justify-center gap-2 p-10 text-sm text-muted-foreground">
-                        <Loader2 className="size-5 animate-spin" />
-                        Loading appointments...
-                    </div>
-                ) : error ? (
-                    <div className="p-8 text-center text-sm text-destructive">
-                        {error}
-                    </div>
-                ) : appointments.length === 0 ? (
-                    <div className="py-14 text-center">
-
-                        <CalendarDays className="mx-auto mb-3 size-10 text-muted-foreground" />
-
-                        <p className="font-medium">
-                            No appointments found
+                <div className="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Date
                         </p>
 
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Create an appointment to see it here.
+                        <p className="mt-2 font-medium">
+                            {formatDate(
+                                appointment.startTime
+                            )}
                         </p>
                     </div>
-                ) : (
-                    <div className="overflow-x-auto">
 
-                        <table className="w-full text-left text-sm">
+                    <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Start Time
+                        </p>
 
-                            <thead className="border-b bg-muted/50">
-                                <tr>
-                                    <th className="px-4 py-3 font-medium">
-                                        Patient
-                                    </th>
+                        <div className="mt-2 flex items-center gap-2">
+                            <Clock className="size-4 text-muted-foreground" />
 
-                                    <th className="px-4 py-3 font-medium">
-                                        Doctor
-                                    </th>
-
-                                    <th className="px-4 py-3 font-medium">
-                                        Date
-                                    </th>
-
-                                    <th className="px-4 py-3 font-medium">
-                                        Time
-                                    </th>
-
-                                    <th className="px-4 py-3 font-medium">
-                                        Reason
-                                    </th>
-
-                                    <th className="px-4 py-3 font-medium">
-                                        Status
-                                    </th>
-
-                                    <th className="px-4 py-3 text-right font-medium">
-                                        Action
-                                    </th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {appointments.map(
-                                    (appointment) => (
-                                        <tr
-                                            key={appointment.id}
-                                            className="border-b transition-colors last:border-0 hover:bg-muted/40"
-                                        >
-
-                                            <td className="px-4 py-4 font-medium">
-                                                {appointment.patient
-                                                    ?.name || "-"}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                {appointment.doctor
-                                                    ?.name || "-"}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                {formatDate(
-                                                    appointment.startTime
-                                                )}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                {formatTime(
-                                                    appointment.startTime
-                                                )}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                {appointment.reason ||
-                                                    "-"}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">
-                                                    {appointment.status ||
-                                                        "-"}
-                                                </span>
-                                            </td>
-
-                                            <td className="px-4 py-4 text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        navigate(
-                                                            `/staff/appointments/${appointment.id}`
-                                                        )
-                                                    }
-                                                    className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-                                                >
-                                                    <Eye className="size-4" />
-                                                    View
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )
+                            <p className="font-medium">
+                                {formatTime(
+                                    appointment.startTime
                                 )}
-                            </tbody>
-                        </table>
+                            </p>
+                        </div>
                     </div>
-                )}
+
+                    <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            End Time
+                        </p>
+
+                        <div className="mt-2 flex items-center gap-2">
+                            <Clock className="size-4 text-muted-foreground" />
+
+                            <p className="font-medium">
+                                {formatTime(
+                                    appointment.endTime
+                                )}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="sm:col-span-2 lg:col-span-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Reason
+                        </p>
+
+                        <p className="mt-2">
+                            {appointment.reason ||
+                                "-"}
+                        </p>
+                    </div>
+
+                    <div className="sm:col-span-2 lg:col-span-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Notes
+                        </p>
+
+                        <p className="mt-2 whitespace-pre-wrap text-sm">
+                            {appointment.notes ||
+                                "No notes available"}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* PATIENT + DOCTOR */}
+
+            <div className="grid gap-6 lg:grid-cols-2">
+                {/* PATIENT */}
+
+                <div className="rounded-xl border bg-card shadow-sm">
+                    <div className="border-b px-6 py-4">
+                        <div className="flex items-center gap-2">
+                            <User className="size-5 text-primary" />
+
+                            <h2 className="font-semibold">
+                                Patient
+                                Information
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 p-6">
+                        <div>
+                            <p className="text-xs font-medium uppercase text-muted-foreground">
+                                Name
+                            </p>
+
+                            <p className="mt-1 font-semibold">
+                                {patient.name ||
+                                    "-"}
+                            </p>
+                        </div>
+
+                        {patient.phone && (
+                            <div className="flex items-center gap-3">
+                                <Phone className="size-4 text-muted-foreground" />
+
+                                <span>
+                                    {
+                                        patient.phone
+                                    }
+                                </span>
+                            </div>
+                        )}
+
+                        {patient.email && (
+                            <div className="flex items-center gap-3">
+                                <Mail className="size-4 text-muted-foreground" />
+
+                                <span>
+                                    {
+                                        patient.email
+                                    }
+                                </span>
+                            </div>
+                        )}
+
+                        {patient.gender && (
+                            <div>
+                                <p className="text-xs font-medium uppercase text-muted-foreground">
+                                    Gender
+                                </p>
+
+                                <p className="mt-1">
+                                    {
+                                        patient.gender
+                                    }
+                                </p>
+                            </div>
+                        )}
+
+                        {patient.dateOfBirth && (
+                            <div>
+                                <p className="text-xs font-medium uppercase text-muted-foreground">
+                                    Date of
+                                    Birth
+                                </p>
+
+                                <p className="mt-1">
+                                    {formatDate(
+                                        patient.dateOfBirth
+                                    )}
+                                </p>
+                            </div>
+                        )}
+
+                        {patient.address && (
+                            <div className="flex items-start gap-3">
+                                <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+
+                                <span>
+                                    {
+                                        patient.address
+                                    }
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* DOCTOR */}
+
+                <div className="rounded-xl border bg-card shadow-sm">
+                    <div className="border-b px-6 py-4">
+                        <div className="flex items-center gap-2">
+                            <Stethoscope className="size-5 text-primary" />
+
+                            <h2 className="font-semibold">
+                                Doctor
+                                Information
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 p-6">
+                        <div>
+                            <p className="text-xs font-medium uppercase text-muted-foreground">
+                                Name
+                            </p>
+
+                            <p className="mt-1 font-semibold">
+                                {doctor.name ||
+                                    "-"}
+                            </p>
+                        </div>
+
+                        {doctor.specialty && (
+                            <div>
+                                <p className="text-xs font-medium uppercase text-muted-foreground">
+                                    Specialty
+                                </p>
+
+                                <p className="mt-1">
+                                    {
+                                        doctor.specialty
+                                    }
+                                </p>
+                            </div>
+                        )}
+
+                        {doctor.phone && (
+                            <div className="flex items-center gap-3">
+                                <Phone className="size-4 text-muted-foreground" />
+
+                                <span>
+                                    {
+                                        doctor.phone
+                                    }
+                                </span>
+                            </div>
+                        )}
+
+                        {doctor.email && (
+                            <div className="flex items-center gap-3">
+                                <Mail className="size-4 text-muted-foreground" />
+
+                                <span>
+                                    {
+                                        doctor.email
+                                    }
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* ID - useful while debugging */}
+
+            <div className="rounded-lg border bg-muted/30 px-4 py-3">
+                <p className="text-xs text-muted-foreground">
+                    Appointment ID:{" "}
+                    <span className="font-mono">
+                        {appointment.id}
+                    </span>
+                </p>
             </div>
         </div>
     );

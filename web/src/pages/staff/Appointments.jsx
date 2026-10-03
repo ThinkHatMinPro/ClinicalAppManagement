@@ -45,13 +45,10 @@ export default function Appointments() {
                 const appointmentList =
                     result.data?.appointments || [];
 
-                console.log(
-                    "Appointments:",
-                    appointmentList
-                );
-
                 if (!cancelled) {
-                    setAppointments(appointmentList);
+                    setAppointments(
+                        appointmentList
+                    );
                 }
             } catch (err) {
                 console.error(
@@ -99,11 +96,14 @@ export default function Appointments() {
             return "-";
         }
 
-        return date.toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-        });
+        return date.toLocaleDateString(
+            "en-IN",
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            }
+        );
     };
 
     // =========================================================
@@ -121,11 +121,14 @@ export default function Appointments() {
             return "-";
         }
 
-        return date.toLocaleTimeString("en-IN", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-        });
+        return date.toLocaleTimeString(
+            "en-IN",
+            {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+            }
+        );
     };
 
     // =========================================================
@@ -155,13 +158,16 @@ export default function Appointments() {
     // VIEW APPOINTMENT
     // =========================================================
 
-    const handleViewAppointment = (appointment) => {
+    const handleViewAppointment = (
+        appointment
+    ) => {
+        const appointmentId =
+            appointment?.id;
+
         console.log(
             "Clicked appointment:",
             appointment
         );
-
-        const appointmentId = appointment?.id;
 
         console.log(
             "Appointment ID:",
@@ -169,11 +175,6 @@ export default function Appointments() {
         );
 
         if (!appointmentId) {
-            console.error(
-                "Appointment ID is missing:",
-                appointment
-            );
-
             setError(
                 "Unable to open appointment because the appointment ID is missing."
             );
@@ -215,7 +216,6 @@ export default function Appointments() {
                     className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
                 >
                     <Plus className="size-4" />
-
                     Add Appointment
                 </button>
             </div>
@@ -248,7 +248,7 @@ export default function Appointments() {
                 </div>
             )}
 
-            {/* APPOINTMENTS TABLE */}
+            {/* LIST */}
 
             <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div className="flex items-center justify-between border-b px-6 py-4">
@@ -262,15 +262,16 @@ export default function Appointments() {
 
                     {!loading && (
                         <span className="text-sm text-muted-foreground">
-                            {appointments.length}{" "}
-                            {appointments.length === 1
+                            {
+                                appointments.length
+                            }{" "}
+                            {appointments.length ===
+                            1
                                 ? "appointment"
                                 : "appointments"}
                         </span>
                     )}
                 </div>
-
-                {/* LOADING */}
 
                 {loading ? (
                     <div className="flex min-h-[250px] items-center justify-center">
@@ -278,18 +279,19 @@ export default function Appointments() {
                             <div className="mx-auto mb-3 size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
 
                             <p className="text-sm text-muted-foreground">
-                                Loading appointments...
+                                Loading
+                                appointments...
                             </p>
                         </div>
                     </div>
-                ) : appointments.length === 0 ? (
-                    /* EMPTY STATE */
-
+                ) : appointments.length ===
+                  0 ? (
                     <div className="flex min-h-[250px] flex-col items-center justify-center px-6 text-center">
                         <CalendarDays className="mb-3 size-10 text-muted-foreground/50" />
 
                         <h3 className="font-medium">
-                            No appointments found
+                            No appointments
+                            found
                         </h3>
 
                         <p className="mt-1 text-sm text-muted-foreground">
@@ -297,26 +299,8 @@ export default function Appointments() {
                                 ? "Try a different search term."
                                 : "Create your first appointment."}
                         </p>
-
-                        {!search && (
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    navigate(
-                                        "/staff/appointments/new"
-                                    )
-                                }
-                                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-                            >
-                                <Plus className="size-4" />
-
-                                Add Appointment
-                            </button>
-                        )}
                     </div>
                 ) : (
-                    /* TABLE */
-
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-muted/50">
@@ -353,15 +337,15 @@ export default function Appointments() {
 
                             <tbody>
                                 {appointments.map(
-                                    (appointment) => (
+                                    (
+                                        appointment
+                                    ) => (
                                         <tr
                                             key={
                                                 appointment.id
                                             }
                                             className="border-b transition-colors last:border-b-0 hover:bg-muted/40"
                                         >
-                                            {/* PATIENT */}
-
                                             <td className="px-6 py-4">
                                                 <div>
                                                     <p className="font-medium">
@@ -384,8 +368,6 @@ export default function Appointments() {
                                                     )}
                                                 </div>
                                             </td>
-
-                                            {/* DOCTOR */}
 
                                             <td className="px-6 py-4">
                                                 <div>
@@ -410,15 +392,11 @@ export default function Appointments() {
                                                 </div>
                                             </td>
 
-                                            {/* DATE */}
-
                                             <td className="px-6 py-4 text-sm">
                                                 {formatDate(
                                                     appointment.startTime
                                                 )}
                                             </td>
-
-                                            {/* TIME */}
 
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2 text-sm">
@@ -429,8 +407,6 @@ export default function Appointments() {
                                                     )}
                                                 </div>
                                             </td>
-
-                                            {/* REASON */}
 
                                             <td className="max-w-[220px] px-6 py-4 text-sm">
                                                 <span
@@ -445,8 +421,6 @@ export default function Appointments() {
                                                 </span>
                                             </td>
 
-                                            {/* STATUS */}
-
                                             <td className="px-6 py-4">
                                                 <span
                                                     className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(
@@ -457,8 +431,6 @@ export default function Appointments() {
                                                         "-"}
                                                 </span>
                                             </td>
-
-                                            {/* VIEW */}
 
                                             <td className="px-6 py-4">
                                                 <button
