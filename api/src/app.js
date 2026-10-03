@@ -5,6 +5,8 @@ const swaggerUi = require("swagger-ui-express");
 const authRoutes = require("./routes/authRoutes");
 const patientRoutes = require("./routes/patientRoutes");
 const staffRoutes = require("./routes/staffRoutes");
+const doctorRoutes = require("./routes/doctorRoutes");
+
 const swaggerSpec = require("./config/swagger");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -29,6 +31,7 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/patient", patientRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/doctor", doctorRoutes);
 
 app.use(errorHandler);
 
