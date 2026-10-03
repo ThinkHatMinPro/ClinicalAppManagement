@@ -32,7 +32,7 @@ export default function BookAppointment() {
     queryKey: ["doctor-slots", doctorId, date],
     queryFn: async () => {
       const response = await api.get(
-        `/api/patient/doctors/${doctorId}/available-slots?date=${date}`,
+        `/patient/doctors/${doctorId}/available-slots?date=${date}`,
       );
 
       return (
@@ -47,7 +47,7 @@ export default function BookAppointment() {
 
   const bookingMutation = useMutation({
     mutationFn: async () => {
-      return api.post("/api/patient/appointments", {
+      return api.post("/patient/appointments", {
         doctorId,
         startTime: `${date}T${startTime}`,
         endTime: `${date}T${endTime}`,

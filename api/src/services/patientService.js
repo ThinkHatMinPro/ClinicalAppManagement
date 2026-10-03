@@ -132,7 +132,7 @@ const getDoctors = async () => {
   });
 };
 
-const getAvailableSlots = async (userId, doctorId, date) => {
+const getDoctorAvailableSlots = async (userId, doctorId, date) => {
   if (!date) {
     const error = new Error("Date is required");
     error.statusCode = 400;
@@ -473,7 +473,7 @@ module.exports = {
   getProfile,
   updateProfile,
   getDoctors,
-  getAvailableSlots,
+  getDoctorAvailableSlots,
   createAppointment,
   getAppointments,
   getAppointmentById,

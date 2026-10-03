@@ -1,70 +1,86 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const appointmentData = [
-  {
-    id: "A001",
-    patient: "Rahul Kumar",
-    reason: "General Consultation",
-    date: "2026-09-30",
-    time: "09:30 AM",
-    status: "Completed",
-  },
-  {
-    id: "A002",
-    patient: "Priya Sharma",
-    reason: "Follow-up",
-    date: "2026-09-30",
-    time: "10:30 AM",
-    status: "Scheduled",
-  },
-  {
-    id: "A003",
-    patient: "Arjun Reddy",
-    reason: "Fever & Cold",
-    date: "2026-09-30",
-    time: "12:00 PM",
-    status: "Scheduled",
-  },
-  {
-    id: "A004",
-    patient: "Sneha Rao",
-    reason: "Regular Checkup",
-    date: "2026-09-30",
-    time: "02:30 PM",
-    status: "In Progress",
-  },
-  {
-    id: "A005",
-    patient: "Vikram Singh",
-    reason: "Blood Pressure",
-    date: "2026-10-01",
-    time: "10:00 AM",
-    status: "Scheduled",
-  },
-];
+import api from "../../lib/api";
 
 const statusStyles = {
-  Scheduled: "bg-success/15 text-success",
-  "In Progress": "bg-info/15 text-info",
-  Completed: "bg-muted text-muted-foreground",
-  Cancelled: "bg-destructive/15 text-destructive",
+  SCHEDULED: "bg-success/15 text-success",
+  IN_PROGRESS: "bg-info/15 text-info",
+  COMPLETED: "bg-muted text-muted-foreground",
+  CANCELLED: "bg-destructive/15 text-destructive",
+};
+
+const statusLabels = {
+  SCHEDULED: "Scheduled",
+  IN_PROGRESS: "In Progress",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+};
+
+const getLocalDate = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+
+  return new Date(now.getTime() - offset * 60000)
+    .toISOString()
+    .split("T")[0];
+};
+
+const getAppointmentDate = (startTime) => {
+  if (!startTime) return "";
+
+  const date = new Date(startTime);
+  const offset = date.getTimezoneOffset();
+
+  return new Date(date.getTime() - offset * 60000)
+    .toISOString()
+    .split("T")[0];
+};
+
+const formatTime = (value) => {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 export default function MyAppointments() {
   const navigate = useNavigate();
 
-  const [selectedDate, setSelectedDate] = useState("2026-09-30");
+  const [selectedDate, setSelectedDate] = useState(getLocalDate());
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadAppointments = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await api.get("/doctor/appointments");
+
+        setAppointments(response.data || []);
+      } catch (err) {
+        setError(err.message || "Failed to load appointments");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAppointments();
+  }, []);
 
   const filteredAppointments = useMemo(() => {
-    return appointmentData.filter(
-      (appointment) => appointment.date === selectedDate
+    return appointments.filter(
+      (appointment) =>
+        getAppointmentDate(appointment.startTime) === selectedDate
     );
-  }, [selectedDate]);
+  }, [appointments, selectedDate]);
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">
           My Appointments
@@ -75,7 +91,6 @@ export default function MyAppointments() {
         </p>
       </div>
 
-      {/* Date selector */}
       <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <label
           htmlFor="appointment-date"
@@ -89,26 +104,39 @@ export default function MyAppointments() {
             id="appointment-date"
             type="date"
             value={selectedDate}
-            onChange={(event) => setSelectedDate(event.target.value)}
+            onChange={(event) =>
+              setSelectedDate(event.target.value)
+            }
             className="w-full max-w-xs rounded-lg border border-input bg-background px-4 py-3 text-foreground outline-none transition focus:ring-2 focus:ring-ring"
           />
         </div>
       </div>
 
-      {/* Appointments */}
       <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="border-b border-border p-6">
           <h2 className="text-lg font-semibold text-foreground">
             Appointments
           </h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            {filteredAppointments.length} appointment
-            {filteredAppointments.length !== 1 ? "s" : ""} found.
-          </p>
+          {!loading && !error && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {filteredAppointments.length} appointment
+              {filteredAppointments.length !== 1 ? "s" : ""} found.
+            </p>
+          )}
         </div>
 
-        {filteredAppointments.length === 0 ? (
+        {loading ? (
+          <div className="p-10 text-center">
+            <p className="text-muted-foreground">
+              Loading appointments...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="p-10 text-center">
+            <p className="text-destructive">{error}</p>
+          </div>
+        ) : filteredAppointments.length === 0 ? (
           <div className="p-10 text-center">
             <p className="text-muted-foreground">
               No appointments found for this date.
@@ -149,7 +177,7 @@ export default function MyAppointments() {
                   >
                     <td className="px-6 py-4">
                       <p className="font-medium text-foreground">
-                        {appointment.patient}
+                        {appointment.patient?.name || "Patient"}
                       </p>
 
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -158,20 +186,22 @@ export default function MyAppointments() {
                     </td>
 
                     <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {appointment.reason}
+                      {appointment.reason || "-"}
                     </td>
 
                     <td className="px-6 py-4 text-sm text-foreground">
-                      {appointment.time}
+                      {formatTime(appointment.startTime)}
                     </td>
 
                     <td className="px-6 py-4">
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-medium ${
-                          statusStyles[appointment.status]
+                          statusStyles[appointment.status] ||
+                          "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {appointment.status}
+                        {statusLabels[appointment.status] ||
+                          appointment.status}
                       </span>
                     </td>
 

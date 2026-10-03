@@ -1,18 +1,9 @@
 const prisma = require("../config/prisma");
 
-const getDoctor = async (userId) => {
+const getDoctorByUserId = async (userId) => {
   const doctor = await prisma.doctor.findUnique({
     where: {
       userId,
-    },
-    select: {
-      id: true,
-      name: true,
-      specialty: true,
-      phone: true,
-      email: true,
-      createdAt: true,
-      updatedAt: true,
     },
   });
 
@@ -25,17 +16,113 @@ const getDoctor = async (userId) => {
   return doctor;
 };
 
-const getAppointments = async (userId) => {
-  const doctor = await prisma.doctor.findUnique({
-    where: { userId },
-    select: { id: true },
-  });
+const getDashboard = async (userId) => {
+  const doctor = await getDoctorByUserId(userId);
 
-  if (!doctor) {
-    const error = new Error("Doctor profile not found");
-    error.statusCode = 404;
-    throw error;
-  }
+  const [
+    scheduled,
+    inProgress,
+    completed,
+    cancelled,
+    nextAppointment,
+  ] = await Promise.all([
+    prisma.appointment.count({
+      where: {
+        doctorId: doctor.id,
+        status: "SCHEDULED",
+      },
+    }),
+
+    prisma.appointment.count({
+      where: {
+        doctorId: doctor.id,
+        status: "IN_PROGRESS",
+      },
+    }),
+
+    prisma.appointment.count({
+      where: {
+        doctorId: doctor.id,
+        status: "COMPLETED",
+      },
+    }),
+
+    prisma.appointment.count({
+      where: {
+        doctorId: doctor.id,
+        status: "CANCELLED",
+      },
+    }),
+
+    prisma.appointment.findFirst({
+      where: {
+        doctorId: doctor.id,
+        status: "SCHEDULED",
+        startTime: {
+          gte: new Date(),
+        },
+      },
+      orderBy: {
+        startTime: "asc",
+      },
+      include: {
+        patient: true,
+      },
+    }),
+  ]);
+
+  return {
+    doctor,
+    statistics: {
+      scheduled,
+      inProgress,
+      completed,
+      cancelled,
+    },
+    nextAppointment,
+  };
+};
+
+const getProfile = async (userId) => {
+  return getDoctorByUserId(userId);
+};
+
+const updateProfile = async (userId, data) => {
+  const doctor = await getDoctorByUserId(userId);
+
+  const {
+    name,
+    specialty,
+    phone,
+    email,
+  } = data;
+
+  return prisma.doctor.update({
+    where: {
+      id: doctor.id,
+    },
+    data: {
+      ...(name !== undefined && {
+        name: name.trim(),
+      }),
+
+      ...(specialty !== undefined && {
+        specialty: specialty.trim(),
+      }),
+
+      ...(phone !== undefined && {
+        phone: phone?.trim() || null,
+      }),
+
+      ...(email !== undefined && {
+        email: email?.trim() || null,
+      }),
+    },
+  });
+};
+
+const getAppointments = async (userId) => {
+  const doctor = await getDoctorByUserId(userId);
 
   return prisma.appointment.findMany({
     where: {
@@ -44,62 +131,26 @@ const getAppointments = async (userId) => {
     orderBy: {
       startTime: "asc",
     },
-    select: {
-      id: true,
-      startTime: true,
-      endTime: true,
-      status: true,
-      reason: true,
-      notes: true,
-      patient: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-          dateOfBirth: true,
-          gender: true,
-        },
-      },
+    include: {
+      patient: true,
     },
   });
 };
 
-const getAppointmentById = async (userId, appointmentId) => {
-  const doctor = await prisma.doctor.findUnique({
-    where: { userId },
-    select: { id: true },
-  });
-
-  if (!doctor) {
-    const error = new Error("Doctor profile not found");
-    error.statusCode = 404;
-    throw error;
-  }
+const getAppointmentById = async (
+  userId,
+  appointmentId
+) => {
+  const doctor = await getDoctorByUserId(userId);
 
   const appointment = await prisma.appointment.findFirst({
     where: {
       id: appointmentId,
       doctorId: doctor.id,
     },
-    select: {
-      id: true,
-      startTime: true,
-      endTime: true,
-      status: true,
-      reason: true,
-      notes: true,
-      patient: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-          dateOfBirth: true,
-          gender: true,
-          address: true,
-        },
-      },
+    include: {
+      patient: true,
+      doctor: true,
     },
   });
 
@@ -117,6 +168,8 @@ const updateAppointmentStatus = async (
   appointmentId,
   status
 ) => {
+  const doctor = await getDoctorByUserId(userId);
+
   const allowedStatuses = [
     "SCHEDULED",
     "IN_PROGRESS",
@@ -127,17 +180,6 @@ const updateAppointmentStatus = async (
   if (!allowedStatuses.includes(status)) {
     const error = new Error("Invalid appointment status");
     error.statusCode = 400;
-    throw error;
-  }
-
-  const doctor = await prisma.doctor.findUnique({
-    where: { userId },
-    select: { id: true },
-  });
-
-  if (!doctor) {
-    const error = new Error("Doctor profile not found");
-    error.statusCode = 404;
     throw error;
   }
 
@@ -161,19 +203,17 @@ const updateAppointmentStatus = async (
     data: {
       status,
     },
-    select: {
-      id: true,
-      startTime: true,
-      endTime: true,
-      status: true,
-      reason: true,
-      notes: true,
+    include: {
+      patient: true,
+      doctor: true,
     },
   });
 };
 
 module.exports = {
-  getDoctor,
+  getDashboard,
+  getProfile,
+  updateProfile,
   getAppointments,
   getAppointmentById,
   updateAppointmentStatus,

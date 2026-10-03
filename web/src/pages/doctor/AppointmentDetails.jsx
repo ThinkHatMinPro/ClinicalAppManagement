@@ -1,83 +1,110 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import api from "../../lib/api";
 import UpdateStatusModal from "../../components/doctor/UpdateStatusModal";
 
-const appointmentData = {
-  A001: {
-    id: "A001",
-    patient: "Rahul Kumar",
-    reason: "General Consultation",
-    date: "2026-09-30",
-    time: "09:30 AM",
-    phone: "+91 98765 43210",
-    email: "rahul@example.com",
-    notes: "Patient reported mild headache and fatigue.",
-    status: "Completed",
-  },
-
-  A002: {
-    id: "A002",
-    patient: "Priya Sharma",
-    reason: "Follow-up",
-    date: "2026-09-30",
-    time: "10:30 AM",
-    phone: "+91 98765 12345",
-    email: "priya@example.com",
-    notes: "Follow-up consultation for previous treatment.",
-    status: "Scheduled",
-  },
-
-  A003: {
-    id: "A003",
-    patient: "Arjun Reddy",
-    reason: "Fever & Cold",
-    date: "2026-09-30",
-    time: "12:00 PM",
-    phone: "+91 99887 66554",
-    email: "arjun@example.com",
-    notes: "Patient experiencing fever and cold symptoms.",
-    status: "Scheduled",
-  },
-
-  A004: {
-    id: "A004",
-    patient: "Sneha Rao",
-    reason: "Regular Checkup",
-    date: "2026-09-30",
-    time: "02:30 PM",
-    phone: "+91 98765 99887",
-    email: "sneha@example.com",
-    notes: "Routine health checkup.",
-    status: "In Progress",
-  },
+const statusStyles = {
+  SCHEDULED: "bg-success/15 text-success",
+  IN_PROGRESS: "bg-info/15 text-info",
+  COMPLETED: "bg-muted text-muted-foreground",
+  CANCELLED: "bg-destructive/15 text-destructive",
 };
 
-const statusStyles = {
-  Scheduled: "bg-success/15 text-success",
-  "In Progress": "bg-info/15 text-info",
-  Completed: "bg-muted text-muted-foreground",
-  Cancelled: "bg-destructive/15 text-destructive",
+const statusLabels = {
+  SCHEDULED: "Scheduled",
+  IN_PROGRESS: "In Progress",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+};
+
+const formatDate = (value) => {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleDateString();
+};
+
+const formatTime = (value) => {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 export default function AppointmentDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [appointment, setAppointment] = useState(
-    appointmentData[id] || appointmentData.A002
-  );
-
+  const [appointment, setAppointment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadAppointment = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await api.get(
+          `/doctor/appointments/${id}`
+        );
+
+        setAppointment(response.data);
+      } catch (err) {
+        setError(
+          err.message || "Failed to load appointment details"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAppointment();
+  }, [id]);
 
   const handleStatusUpdate = (updatedAppointment) => {
     setAppointment(updatedAppointment);
     setIsModalOpen(false);
   };
 
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-8">
+        <p className="text-muted-foreground">
+          Loading appointment...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <p className="text-destructive">{error}</p>
+
+        <button
+          onClick={() => navigate("/doctor/appointments")}
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          ← Back to Appointments
+        </button>
+      </div>
+    );
+  }
+
+  if (!appointment) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        Appointment not found.
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="space-y-8">
-        {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <button
@@ -98,14 +125,15 @@ export default function AppointmentDetails() {
 
           <span
             className={`w-fit rounded-full px-4 py-2 text-sm font-medium ${
-              statusStyles[appointment.status]
+              statusStyles[appointment.status] ||
+              "bg-muted text-muted-foreground"
             }`}
           >
-            {appointment.status}
+            {statusLabels[appointment.status] ||
+              appointment.status}
           </span>
         </div>
 
-        {/* Appointment information */}
         <div className="rounded-xl border border-border bg-card shadow-sm">
           <div className="border-b border-border p-6">
             <h2 className="text-lg font-semibold text-foreground">
@@ -120,7 +148,7 @@ export default function AppointmentDetails() {
               </p>
 
               <p className="mt-1 font-medium text-foreground">
-                {appointment.patient}
+                {appointment.patient?.name || "-"}
               </p>
             </div>
 
@@ -130,7 +158,7 @@ export default function AppointmentDetails() {
               </p>
 
               <p className="mt-1 font-medium text-foreground">
-                {appointment.reason}
+                {appointment.reason || "-"}
               </p>
             </div>
 
@@ -140,7 +168,7 @@ export default function AppointmentDetails() {
               </p>
 
               <p className="mt-1 font-medium text-foreground">
-                {appointment.date}
+                {formatDate(appointment.startTime)}
               </p>
             </div>
 
@@ -150,7 +178,7 @@ export default function AppointmentDetails() {
               </p>
 
               <p className="mt-1 font-medium text-foreground">
-                {appointment.time}
+                {formatTime(appointment.startTime)}
               </p>
             </div>
 
@@ -160,7 +188,7 @@ export default function AppointmentDetails() {
               </p>
 
               <p className="mt-1 font-medium text-foreground">
-                {appointment.phone}
+                {appointment.patient?.phone || "-"}
               </p>
             </div>
 
@@ -170,7 +198,7 @@ export default function AppointmentDetails() {
               </p>
 
               <p className="mt-1 font-medium text-foreground">
-                {appointment.email}
+                {appointment.patient?.email || "-"}
               </p>
             </div>
 
@@ -180,13 +208,12 @@ export default function AppointmentDetails() {
               </p>
 
               <p className="mt-1 leading-6 text-foreground">
-                {appointment.notes}
+                {appointment.notes || "No notes available."}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex justify-end">
           <button
             onClick={() => setIsModalOpen(true)}
@@ -197,7 +224,6 @@ export default function AppointmentDetails() {
         </div>
       </div>
 
-      {/* Status Modal */}
       {isModalOpen && (
         <UpdateStatusModal
           appointment={appointment}

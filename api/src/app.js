@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const swaggerUi = require("swagger-ui-express");
-const doctorRoutes = require("./routes/doctorRoutes");
+
 const authRoutes = require("./routes/authRoutes");
 const patientRoutes = require("./routes/patientRoutes");
 const staffRoutes = require("./routes/staffRoutes");
@@ -15,6 +15,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.disable("etag");
+
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -27,7 +28,7 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec)
 );
-app.use("/api/doctor", doctorRoutes);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/patient", patientRoutes);
 app.use("/api/staff", staffRoutes);
