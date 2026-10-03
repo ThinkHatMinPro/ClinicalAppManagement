@@ -1,7 +1,18 @@
-import { ChevronDown, Bell } from "lucide-react";
+import { ChevronDown, Bell, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { SwitchMode } from "@/components/theme/switch-mode";
 
 export default function DoctorHeader() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user");
+
+    navigate("/auth");
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card">
       <div className="flex h-20 items-center justify-between px-6 lg:px-8">
@@ -28,6 +39,15 @@ export default function DoctorHeader() {
             </div>
 
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </button>
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
           </button>
         </div>
       </div>
