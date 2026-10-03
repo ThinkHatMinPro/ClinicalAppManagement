@@ -4,13 +4,13 @@ import DoctorSidebar from "./DoctorSidebar";
 
 export default function DoctorLayout() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <DoctorHeader />
+    <div className="flex min-h-screen bg-background text-foreground">
+      <DoctorSidebar />
 
-      <div className="flex">
-        <DoctorSidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <DoctorHeader />
 
-        <main className="min-w-0 flex-1 p-6 lg:p-8">
+        <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

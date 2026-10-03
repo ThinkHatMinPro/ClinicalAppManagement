@@ -1,17 +1,32 @@
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { createContext, useContext, useEffect, useState } from "react";
+
+const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("clinic-theme") || "light";
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
+
+    localStorage.setItem("clinic-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((current) => (current === "dark" ? "light" : "dark"));
+  };
+
   return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="light"
-      enableSystem
-      storageKey="clinic-theme"
-      scriptProps={{
-        suppressHydrationWarning: true,
-      }}
-    >
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
-    </NextThemesProvider>
+    </ThemeContext.Provider>
   );
+}
+
+export function useTheme() {
+  return useContext(ThemeContext);
 }

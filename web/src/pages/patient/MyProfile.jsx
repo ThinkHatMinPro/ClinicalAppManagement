@@ -35,7 +35,7 @@ export default function MyProfile() {
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData) => {
       return api.put(
-        "/api/patient/profile",
+        "/patient/profile",
         profileData,
       );
     },
@@ -147,10 +147,6 @@ export default function MyProfile() {
   return (
     <div className="max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">
-          My Profile
-        </h1>
-
         <p className="mt-2 text-muted-foreground">
           View and update your personal information.
         </p>

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { User, Stethoscope, Users } from "lucide-react";
 
 const roles = [
@@ -19,19 +19,19 @@ const roles = [
   },
 ];
 
-export function RoleSelector({
-  value,
-  onChange,
-  error,
-}) {
+export function RoleSelector({ value, onChange, error, allowedRoles }) {
+  const visibleRoles = allowedRoles
+    ? roles.filter((role) => allowedRoles.includes(role.value))
+    : roles;
+
+  const gridCols = visibleRoles.length === 2 ? "grid-cols-2" : "grid-cols-3";
+
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-foreground">
-        Select your role
-      </p>
+      <p className="text-xs font-medium text-foreground">Select your role</p>
 
-      <div className="grid grid-cols-3 gap-3">
-        {roles.map((role) => {
+      <div className={`grid ${gridCols} gap-3`}>
+        {visibleRoles.map((role) => {
           const Icon = role.icon;
           const isSelected = value === role.value;
 
@@ -58,11 +58,7 @@ export function RoleSelector({
         })}
       </div>
 
-      {error && (
-        <p className="text-xs text-destructive">
-          {error}
-        </p>
-      )}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

@@ -259,13 +259,6 @@ const getAppointmentById = async (req, res, next) => {
     try {
         const appointmentId = req.params.id;
 
-        console.log("=================================");
-        console.log("GET APPOINTMENT CONTROLLER");
-        console.log("Original URL:", req.originalUrl);
-        console.log("Route params:", req.params);
-        console.log("Appointment ID:", appointmentId);
-        console.log("=================================");
-
         if (
             !appointmentId ||
             appointmentId === "undefined" ||
@@ -286,11 +279,6 @@ const getAppointmentById = async (req, res, next) => {
             data
         );
     } catch (error) {
-        console.error(
-            "getAppointmentById controller error:",
-            error
-        );
-
         next(error);
     }
 };
@@ -325,12 +313,7 @@ const createAppointment = async (req, res, next) => {
 const updateAppointment = async (req, res, next) => {
     try {
         const appointmentId = req.params.id;
-
-        console.log(
-            "Updating appointment ID:",
-            appointmentId
-        );
-
+ 
         if (
             !appointmentId ||
             appointmentId === "undefined" ||
@@ -356,6 +339,35 @@ const updateAppointment = async (req, res, next) => {
     }
 };
 
+const deletePatient = async (req, res, next) => {
+    try {
+        const data = await staffService.deletePatient(req.params.id);
+
+        return sendSuccess(res, "Patient deleted successfully", data);
+    } catch (error) {
+        next(error);
+    }
+};
+
+const deleteDoctor = async (req, res, next) => {
+    try {
+        const data = await staffService.deleteDoctor(req.params.id);
+
+        return sendSuccess(res, "Doctor deleted successfully", data);
+    } catch (error) {
+        next(error);
+    }
+};
+
+const deleteAppointment = async (req, res, next) => {
+    try {
+        const data = await staffService.deleteAppointment(req.params.id);
+
+        return sendSuccess(res, "Appointment deleted successfully", data);
+    } catch (error) {
+        next(error);
+    }
+};
 
 // ============================================================
 // EXPORTS
@@ -370,16 +382,19 @@ module.exports = {
     getPatientById,
     createPatient,
     updatePatient,
+    deletePatient,
 
     // Doctors
     getDoctors,
     getDoctorById,
     createDoctor,
     updateDoctor,
+    deleteDoctor,
 
     // Appointments
     getAppointments,
     getAppointmentById,
     createAppointment,
     updateAppointment,
+    deleteAppointment,
 };

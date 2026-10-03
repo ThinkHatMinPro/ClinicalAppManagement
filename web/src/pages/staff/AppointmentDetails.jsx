@@ -1,267 +1,231 @@
-import {
-    CalendarDays,
-    Eye,
-    Loader2,
-    Plus,
-    Search,
-} from "lucide-react";
-
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "@/lib/api";
 
 const formatDate = (value) => {
-    if (!value) return "-";
+  if (!value) return "-";
 
-    return new Date(value).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    });
+  return new Date(value).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 };
 
 const formatTime = (value) => {
-    if (!value) return "-";
+  if (!value) return "-";
 
-    return new Date(value).toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+  return new Date(value).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
-export default function Appointments() {
-    const navigate = useNavigate();
+function Field({ label, value }) {
+  return (
+    <div>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1 font-medium">{value || "-"}</p>
+    </div>
+  );
+}
 
-    const [appointments, setAppointments] = useState([]);
-    const [search, setSearch] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+export default function AppointmentDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        let cancelled = false;
+  const [appointment, setAppointment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
 
-        const timer = setTimeout(async () => {
-            try {
-                const result = await api.get(
-                    `/staff/appointments?search=${encodeURIComponent(search)}`
-                );
+  useEffect(() => {
+    const fetchAppointment = async () => {
+      try {
+        const result = await api.get(`/staff/appointments/${id}`);
 
-                console.log("Appointments response:", result);
+        setAppointment(result.data);
+      } catch (err) {
+        setError(err.message || "Failed to fetch appointment");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-                if (cancelled) return;
+    fetchAppointment();
+  }, [id]);
 
-                setAppointments(
-                    result.data?.appointments || []
-                );
-
-                setError("");
-            } catch (err) {
-                if (cancelled) return;
-
-                console.error(
-                    "Fetch appointments error:",
-                    err
-                );
-
-                setError(
-                    err.message ||
-                    "Failed to fetch appointments"
-                );
-
-                setAppointments([]);
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            }
-        }, 300);
-
-        return () => {
-            cancelled = true;
-            clearTimeout(timer);
-        };
-    }, [search]);
-
+  if (loading) {
     return (
-        <div className="space-y-6">
-
-            {/* PAGE HEADER */}
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        Appointments
-                    </h1>
-
-                    <p className="text-sm text-muted-foreground">
-                        Manage clinic appointments.
-                    </p>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={() =>
-                        navigate("/staff/appointments/new")
-                    }
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
-                >
-                    <Plus className="size-4" />
-                    Add Appointment
-                </button>
-            </div>
-
-            {/* APPOINTMENTS CARD */}
-            <div className="rounded-xl border bg-card shadow-sm">
-
-                {/* SEARCH */}
-                <div className="flex flex-col justify-between gap-4 border-b p-4 sm:flex-row sm:items-center">
-
-                    <div className="relative w-full sm:max-w-sm">
-
-                        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) =>
-                                setSearch(e.target.value)
-                            }
-                            placeholder="Search appointments..."
-                            className="h-10 w-full rounded-lg border bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CalendarDays className="size-4" />
-
-                        {appointments.length} appointments
-                    </div>
-                </div>
-
-                {/* CONTENT */}
-                {loading ? (
-                    <div className="flex items-center justify-center gap-2 p-10 text-sm text-muted-foreground">
-                        <Loader2 className="size-5 animate-spin" />
-                        Loading appointments...
-                    </div>
-                ) : error ? (
-                    <div className="p-8 text-center text-sm text-destructive">
-                        {error}
-                    </div>
-                ) : appointments.length === 0 ? (
-                    <div className="py-14 text-center">
-
-                        <CalendarDays className="mx-auto mb-3 size-10 text-muted-foreground" />
-
-                        <p className="font-medium">
-                            No appointments found
-                        </p>
-
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Create an appointment to see it here.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-
-                        <table className="w-full text-left text-sm">
-
-                            <thead className="border-b bg-muted/50">
-                                <tr>
-                                    <th className="px-4 py-3 font-medium">
-                                        Patient
-                                    </th>
-
-                                    <th className="px-4 py-3 font-medium">
-                                        Doctor
-                                    </th>
-
-                                    <th className="px-4 py-3 font-medium">
-                                        Date
-                                    </th>
-
-                                    <th className="px-4 py-3 font-medium">
-                                        Time
-                                    </th>
-
-                                    <th className="px-4 py-3 font-medium">
-                                        Reason
-                                    </th>
-
-                                    <th className="px-4 py-3 font-medium">
-                                        Status
-                                    </th>
-
-                                    <th className="px-4 py-3 text-right font-medium">
-                                        Action
-                                    </th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {appointments.map(
-                                    (appointment) => (
-                                        <tr
-                                            key={appointment.id}
-                                            className="border-b transition-colors last:border-0 hover:bg-muted/40"
-                                        >
-
-                                            <td className="px-4 py-4 font-medium">
-                                                {appointment.patient
-                                                    ?.name || "-"}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                {appointment.doctor
-                                                    ?.name || "-"}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                {formatDate(
-                                                    appointment.startTime
-                                                )}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                {formatTime(
-                                                    appointment.startTime
-                                                )}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                {appointment.reason ||
-                                                    "-"}
-                                            </td>
-
-                                            <td className="px-4 py-4">
-                                                <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">
-                                                    {appointment.status ||
-                                                        "-"}
-                                                </span>
-                                            </td>
-
-                                            <td className="px-4 py-4 text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        navigate(
-                                                            `/staff/appointments/${appointment.id}`
-                                                        )
-                                                    }
-                                                    className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-                                                >
-                                                    <Eye className="size-4" />
-                                                    View
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </div>
+      <div className="p-8 text-center text-sm text-muted-foreground">
+        Loading appointment...
+      </div>
     );
+  }
+
+  if (error || !appointment) {
+    return (
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => navigate("/staff/appointments")}
+          className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+        >
+          <ArrowLeft className="size-4" />
+          Back to Appointments
+        </button>
+
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {error || "Appointment not found."}
+        </div>
+      </div>
+    );
+  }
+
+  const canCancel =
+    appointment.status === "SCHEDULED" || appointment.status === "IN_PROGRESS";
+
+  const handleCancel = async () => {
+    if (!window.confirm("Cancel this appointment?")) {
+      return;
+    }
+
+    try {
+      setBusy(true);
+      setActionError("");
+
+      await api.put(`/staff/appointments/${appointment.id}`, {
+        status: "CANCELLED",
+      });
+
+      setAppointment((current) => ({
+        ...current,
+        status: "CANCELLED",
+      }));
+    } catch (err) {
+      setActionError(err.message || "Failed to cancel appointment");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this appointment? This cannot be undone.")) {
+      return;
+    }
+
+    try {
+      setBusy(true);
+      setActionError("");
+
+      await api.delete(`/staff/appointments/${appointment.id}`);
+
+      navigate("/staff/appointments", { replace: true });
+    } catch (err) {
+      setActionError(err.message || "Failed to delete appointment");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <button
+        type="button"
+        onClick={() => navigate("/staff/appointments")}
+        className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+      >
+        <ArrowLeft className="size-4" />
+        Back to Appointments
+      </button>
+
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Appointment Details
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {formatDate(appointment.startTime)},{" "}
+            {formatTime(appointment.startTime)} -{" "}
+            {formatTime(appointment.endTime)}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() =>
+              navigate(`/staff/appointments/${appointment.id}/edit`)
+            }
+            disabled={busy}
+            className="h-10 rounded-lg border px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            Edit / Reschedule
+          </button>
+
+          {canCancel && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={busy}
+              className="h-10 rounded-lg border px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            >
+              Cancel Appointment
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={busy}
+            className="h-10 rounded-lg bg-destructive px-4 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+
+      {actionError && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {actionError}
+        </div>
+      )}
+
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <h3 className="mb-5 text-lg font-semibold">Appointment</h3>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Status" value={appointment.status} />
+          <Field label="Date" value={formatDate(appointment.startTime)} />
+          <Field label="Start Time" value={formatTime(appointment.startTime)} />
+          <Field label="End Time" value={formatTime(appointment.endTime)} />
+          <Field label="Reason" value={appointment.reason} />
+          <Field label="Notes" value={appointment.notes} />
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="rounded-xl border bg-card p-6 shadow-sm">
+          <h3 className="mb-5 text-lg font-semibold">Patient</h3>
+
+          <div className="space-y-4">
+            <Field label="Name" value={appointment.patient?.name} />
+            <Field label="Phone" value={appointment.patient?.phone} />
+            <Field label="Email" value={appointment.patient?.email} />
+          </div>
+        </div>
+
+        <div className="rounded-xl border bg-card p-6 shadow-sm">
+          <h3 className="mb-5 text-lg font-semibold">Doctor</h3>
+
+          <div className="space-y-4">
+            <Field label="Name" value={appointment.doctor?.name} />
+            <Field label="Specialty" value={appointment.doctor?.specialty} />
+            <Field label="Phone" value={appointment.doctor?.phone} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

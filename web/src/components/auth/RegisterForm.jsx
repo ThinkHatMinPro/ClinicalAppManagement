@@ -11,14 +11,14 @@ import {
   Check,
 } from "lucide-react";
 
+import { registerUser } from "@/api/authApi";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RoleSelector } from "@/components/ui/RoleSelector";
+import { RoleSelector } from "@/components/ui/roleselector";
 
-/* =========================================================
-   VALIDATION
-========================================================= */
+/* VALIDATION */
 
 const registerSchema = z
   .object({
@@ -93,16 +93,12 @@ const registerSchema = z
     path: ["specialty"],
   });
 
-/* =========================================================
-   COMMON CONTROL STYLE
-========================================================= */
+/* COMMON CONTROL STYLE */
 
 const controlClass =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 dark:[color-scheme:dark]";
 
-/* =========================================================
-   REGISTER FORM
-========================================================= */
+/* REGISTER FORM */
 
 export default function RegisterForm({ onSwitchToLogin }) {
   const [step, setStep] = useState(1);
@@ -139,43 +135,30 @@ export default function RegisterForm({ onSwitchToLogin }) {
     },
   });
 
-  /* =========================================================
-     WATCH SELECTED ROLE
-  ========================================================= */
+  /* WATCH SELECTED ROLE */
 
   const selectedRole = watch("role");
 
-  /* =========================================================
-     DEVELOPMENT AUTOFILL
-  ========================================================= */
+  /* DEVELOPMENT AUTOFILL */
 
   const handleDevAutofill = () => {
     if (!selectedRole) {
       setNotice("Please select a role first.");
       return;
     }
-
     setNotice("");
 
-    /* -------------------------
-       PATIENT
-    ------------------------- */
+    /* PATIENT */
 
     if (selectedRole === "PATIENT") {
       setValue("name", "Test Patient");
       setValue("email", "patient@test.com");
       setValue("phone", "9876543210");
-
       setValue("dateOfBirth", "2000-05-15");
-
       setValue("gender", "Female");
-
       setValue("address", "Hyderabad, Telangana");
-
       setValue("specialty", "");
-
       setValue("password", "Password@123");
-
       setValue("confirmPassword", "Password@123");
     }
 
@@ -185,21 +168,14 @@ export default function RegisterForm({ onSwitchToLogin }) {
 
     if (selectedRole === "DOCTOR") {
       setValue("name", "Dr Test");
-
       setValue("email", "doctor@test.com");
-
       setValue("phone", "9876543211");
-
       setValue("specialty", "Cardiology");
-
       /* Clear Patient fields */
-
       setValue("dateOfBirth", "");
       setValue("gender", "");
       setValue("address", "");
-
       setValue("password", "Password@123");
-
       setValue("confirmPassword", "Password@123");
     }
 
@@ -209,39 +185,30 @@ export default function RegisterForm({ onSwitchToLogin }) {
 
     if (selectedRole === "STAFF") {
       setValue("name", "Test Staff");
-
       setValue("email", "staff@test.com");
-
       setValue("phone", "9876543212");
-
       /* Clear role-specific fields */
 
       setValue("dateOfBirth", "");
       setValue("gender", "");
       setValue("address", "");
       setValue("specialty", "");
-
       setValue("password", "Password@123");
-
       setValue("confirmPassword", "Password@123");
     }
   };
 
-  /* =========================================================
-     NEXT STEP
-  ========================================================= */
+  /* NEXT STEP */
 
   const handleNext = async () => {
     let fields = ["role", "name", "phone"];
 
     /* Patient fields */
-
     if (selectedRole === "PATIENT") {
       fields.push("dateOfBirth", "gender", "address");
     }
 
     /* Doctor fields */
-
     if (selectedRole === "DOCTOR") {
       fields.push("specialty");
     }
@@ -288,23 +255,7 @@ export default function RegisterForm({ onSwitchToLogin }) {
         }),
       };
 
-      console.log("Register data:", payload);
-
-      const response = await fetch("http://localhost:5000/api/auth/signup", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Unable to create account");
-      }
+      await registerUser(payload);
 
       setNotice("Account created successfully.");
 
@@ -316,16 +267,12 @@ export default function RegisterForm({ onSwitchToLogin }) {
     }
   };
 
-  /* =========================================================
-     UI
-  ========================================================= */
+  /* UI */
 
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="w-full max-w-md">
-        {/* =================================================
-            HEADING + AUTOFILL
-        ================================================= */}
+        {/* HEADING + AUTOFILL */}
 
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
@@ -340,7 +287,7 @@ export default function RegisterForm({ onSwitchToLogin }) {
 
           {/* DEVELOPMENT ONLY */}
 
-          {import.meta.env.DEV && (
+          {/* {import.meta.env.DEV && (
             <Button
               type="button"
               variant="outline"
@@ -350,32 +297,22 @@ export default function RegisterForm({ onSwitchToLogin }) {
             >
               Autofill
             </Button>
-          )}
+          )} */}
         </div>
 
-        {/* =================================================
-            STEP INDICATOR
-        ================================================= */}
-
+        {/* STEP INDICATOR */}
         <StepIndicator step={step} />
 
-        {/* =================================================
-            FORM
-        ================================================= */}
-
+        {/* FORM */}
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6">
           {/* Register role with React Hook Form */}
-
           <input type="hidden" {...register("role")} />
 
-          {/* =================================================
-              STEP 1
-          ================================================= */}
-
+          {/* STEP 1 */}
           {step === 1 && (
             <div className="space-y-3">
-              {/* ROLE SELECTOR */}
 
+              {/* ROLE SELECTOR */}
               <RoleSelector
                 value={selectedRole}
                 onChange={(role) => {
@@ -758,9 +695,7 @@ function StepIndicator({ step }) {
   );
 }
 
-/* =========================================================
-   FIELD
-========================================================= */
+/* FIELD */
 
 function Field({ label, htmlFor, error, hint, children }) {
   return (
@@ -782,9 +717,7 @@ function Field({ label, htmlFor, error, hint, children }) {
   );
 }
 
-/* =========================================================
-   PASSWORD BUTTON
-========================================================= */
+/* PASSWORD BUTTON */
 
 function PasswordButton({ show, setShow, label = "password" }) {
   return (

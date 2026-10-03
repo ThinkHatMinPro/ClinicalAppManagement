@@ -4,7 +4,9 @@ node_modules/
 
 # Environment variables
 .env
+.env.*
 **/.env
+**/.env.*
 
 # Keep environment examples
 !.env.example
@@ -14,6 +16,7 @@ node_modules/
 dist/
 **/dist/
 build/
+coverage/
 
 # Logs
 *.log
@@ -26,3 +29,9 @@ npm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# AI coding tool folders (Prisma skill files, not part of the app)
+.agents/
+.claude/
+.windsurf/
+skills-lock.json

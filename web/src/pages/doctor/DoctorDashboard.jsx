@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../lib/api";
+import api from "@/lib/api";
 
 const statusStyles = {
   SCHEDULED: "bg-success/15 text-success",
@@ -39,11 +39,10 @@ export default function DoctorDashboard() {
         setLoading(true);
         setError("");
 
-        const [dashboardResponse, appointmentsResponse] =
-          await Promise.all([
-            api.get("/doctor/dashboard"),
-            api.get("/doctor/appointments"),
-          ]);
+        const [dashboardResponse, appointmentsResponse] = await Promise.all([
+          api.get("/doctor/dashboard"),
+          api.get("/doctor/appointments"),
+        ]);
 
         setDashboard(dashboardResponse.data);
         setAppointments(appointmentsResponse.data || []);
@@ -69,9 +68,7 @@ export default function DoctorDashboard() {
 
   const totalPatients = useMemo(() => {
     const patientIds = new Set(
-      appointments
-        .map((appointment) => appointment.patientId)
-        .filter(Boolean)
+      appointments.map((appointment) => appointment.patientId).filter(Boolean),
     );
 
     return patientIds.size;
@@ -106,10 +103,8 @@ export default function DoctorDashboard() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-8">
-        <p className="text-muted-foreground">
-          Loading doctor dashboard...
-        </p>
+      <div className="flex min-h-[400px] items-center justify-center text-muted-foreground">
+        Loading doctor dashboard...
       </div>
     );
   }
@@ -117,19 +112,19 @@ export default function DoctorDashboard() {
   if (error) {
     return (
       <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6">
-        <p className="text-destructive">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight">
           Doctor Dashboard
         </h1>
 
-        <p className="mt-2 text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground">
           Welcome back
           {dashboard?.doctor?.name
             ? `, Dr. ${dashboard.doctor.name}`
@@ -148,7 +143,7 @@ export default function DoctorDashboard() {
               {stat.title}
             </p>
 
-            <p className="mt-2 text-3xl font-bold text-foreground">
+            <p className="mt-2 text-3xl font-semibold tracking-tight">
               {stat.value}
             </p>
 
@@ -159,16 +154,16 @@ export default function DoctorDashboard() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <p className="text-sm font-medium text-muted-foreground">
           Next Appointment
         </p>
 
         {nextAppointment ? (
           <>
-            <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-foreground">
+                <h2 className="text-xl font-semibold">
                   {nextAppointment.patient?.name || "Patient"}
                 </h2>
 
@@ -183,19 +178,16 @@ export default function DoctorDashboard() {
                 </p>
 
                 <p className="text-sm text-muted-foreground">
-                  {new Date(
-                    nextAppointment.startTime
-                  ).toLocaleDateString()}
+                  {new Date(nextAppointment.startTime).toLocaleDateString()}
                 </p>
               </div>
             </div>
 
             <div className="mt-5">
               <button
+                type="button"
                 onClick={() =>
-                  navigate(
-                    `/doctor/appointments/${nextAppointment.id}`
-                  )
+                  navigate(`/doctor/appointments/${nextAppointment.id}`)
                 }
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
@@ -204,18 +196,16 @@ export default function DoctorDashboard() {
             </div>
           </>
         ) : (
-          <p className="mt-3 text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground">
             No upcoming appointments.
           </p>
         )}
       </div>
 
       <div className="rounded-xl border border-border bg-card shadow-sm">
-        <div className="flex items-center justify-between border-b border-border p-6">
+        <div className="flex items-center justify-between border-b border-border p-5">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">
-              Today's Appointments
-            </h2>
+            <h2 className="text-lg font-semibold">Today's Appointments</h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
               Your appointments scheduled for today.
@@ -223,6 +213,7 @@ export default function DoctorDashboard() {
           </div>
 
           <button
+            type="button"
             onClick={() => navigate("/doctor/appointments")}
             className="text-sm font-medium text-primary hover:underline"
           >
@@ -232,7 +223,7 @@ export default function DoctorDashboard() {
 
         {todayAppointments.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               No appointments scheduled for today.
             </p>
           </div>
@@ -244,7 +235,7 @@ export default function DoctorDashboard() {
                 className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="font-medium text-foreground">
+                  <p className="font-medium">
                     {appointment.patient?.name || "Patient"}
                   </p>
 
@@ -254,7 +245,7 @@ export default function DoctorDashboard() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-sm font-medium">
                     {formatTime(appointment.startTime)}
                   </span>
 
@@ -264,20 +255,18 @@ export default function DoctorDashboard() {
                       "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {statusLabels[appointment.status] ||
-                      appointment.status}
+                    {statusLabels[appointment.status] || appointment.status}
                   </span>
-<button
-    type="button"
-    onClick={() =>
-        navigate(
-            `/doctor/appointments/${appointment.id}`
-        )
-    }
-    className="font-medium text-primary hover:underline"
->
-    View
-</button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(`/doctor/appointments/${appointment.id}`)
+                    }
+                    className="font-medium text-primary hover:underline"
+                  >
+                    View
+                  </button>
                 </div>
               </div>
             ))}

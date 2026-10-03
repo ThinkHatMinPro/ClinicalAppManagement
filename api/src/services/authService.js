@@ -2,7 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const userRepository = require("../repositories/userRepository");
 
-const ALLOWED_ROLES = ["PATIENT", "DOCTOR", "ADMIN"];
+const ALLOWED_ROLES = ["PATIENT", "DOCTOR", "STAFF"];
 
 const signup = async ({ name, email, password, role }) => {
   if (!name || !email || !password || !role) {

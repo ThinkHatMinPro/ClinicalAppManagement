@@ -21,7 +21,7 @@ export default function MyAppointments() {
   const cancelMutation = useMutation({
     mutationFn: async (appointmentId) => {
       return api.patch(
-        `/api/patient/appointments/${appointmentId}/cancel`,
+        `/patient/appointments/${appointmentId}/cancel`,
       );
     },
     onSuccess: () => {
@@ -98,7 +98,6 @@ export default function MyAppointments() {
         <h1 className="text-2xl font-semibold">
           My Appointments
         </h1>
-
         <p className="mt-4 text-muted-foreground">
           Loading appointments...
         </p>
@@ -124,10 +123,6 @@ export default function MyAppointments() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">
-          My Appointments
-        </h1>
-
         <p className="mt-2 text-muted-foreground">
           View and manage your appointments.
         </p>

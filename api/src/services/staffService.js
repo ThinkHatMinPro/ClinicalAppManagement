@@ -156,51 +156,51 @@ const getPatients = async ({ search, page = 1, limit = 10 }) => {
   };
 };
 const getPatientById = async (patientId) => {
-    const patient = await prisma.patient.findUnique({
-        where: {
-            id: patientId,
+  const patient = await prisma.patient.findUnique({
+    where: {
+      id: patientId,
+    },
+    select: {
+      id: true,
+      name: true,
+      dateOfBirth: true,
+      gender: true,
+      phone: true,
+      email: true,
+      address: true,
+      createdAt: true,
+      updatedAt: true,
+      appointments: {
+        orderBy: {
+          startTime: "desc",
         },
+        take: 10,
         select: {
-            id: true,
-            name: true,
-            dateOfBirth: true,
-            gender: true,
-            phone: true,
-            email: true,
-            address: true,
-            createdAt: true,
-            updatedAt: true,
-            appointments: {
-                orderBy: {
-                    startTime: "desc",
-                },
-                take: 10,
-                select: {
-                    id: true,
-                    startTime: true,
-                    endTime: true,
-                    status: true,
-                    reason: true,
-                    notes: true,
-                    doctor: {
-                        select: {
-                            id: true,
-                            name: true,
-                            specialty: true,
-                        },
-                    },
-                },
+          id: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          reason: true,
+          notes: true,
+          doctor: {
+            select: {
+              id: true,
+              name: true,
+              specialty: true,
             },
+          },
         },
-    });
+      },
+    },
+  });
 
-    if (!patient) {
-        const error = new Error("Patient not found");
-        error.statusCode = 404;
-        throw error;
-    }
+  if (!patient) {
+    const error = new Error("Patient not found");
+    error.statusCode = 404;
+    throw error;
+  }
 
-    return patient;
+  return patient;
 };
 const createPatient = async ({
   name,
@@ -243,14 +243,7 @@ const createPatient = async ({
 
 const updatePatient = async (
   patientId,
-  {
-    name,
-    dateOfBirth,
-    gender,
-    phone,
-    email,
-    address,
-  },
+  { name, dateOfBirth, gender, phone, email, address },
 ) => {
   const existingPatient = await prisma.patient.findUnique({
     where: {
@@ -417,12 +410,7 @@ const getDoctorById = async (doctorId) => {
   return doctor;
 };
 
-const createDoctor = async ({
-  name,
-  specialty,
-  phone,
-  email,
-}) => {
+const createDoctor = async ({ name, specialty, phone, email }) => {
   if (!name || !name.trim()) {
     const error = new Error("Doctor name is required");
     error.statusCode = 400;
@@ -450,15 +438,7 @@ const createDoctor = async ({
   return doctor;
 };
 
-const updateDoctor = async (
-  doctorId,
-  {
-    name,
-    specialty,
-    phone,
-    email,
-  },
-) => {
+const updateDoctor = async (doctorId, { name, specialty, phone, email }) => {
   const existingDoctor = await prisma.doctor.findUnique({
     where: {
       id: doctorId,
@@ -757,15 +737,7 @@ const createAppointment = async ({
 
 const updateAppointment = async (
   appointmentId,
-  {
-    patientId,
-    doctorId,
-    startTime,
-    endTime,
-    status,
-    reason,
-    notes,
-  },
+  { patientId, doctorId, startTime, endTime, status, reason, notes },
 ) => {
   const existingAppointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
@@ -944,17 +916,10 @@ const updateAppointment = async (
 };
 
 const getAppointmentById = async (appointmentId) => {
-    console.log("=================================");
-    console.log("REAL getAppointmentById");
-    console.log("Received appointmentId:", appointmentId);
-    console.log("Type:", typeof appointmentId);
-    console.log("Length:", appointmentId?.length);
-    console.log("=================================");
-
-    const appointment = await prisma.appointment.findUnique({
-        where: {
-            id: appointmentId,
-        },
+  const appointment = await prisma.appointment.findUnique({
+    where: {
+      id: appointmentId,
+    },
     select: {
       id: true,
       startTime: true,
@@ -996,18 +961,108 @@ const getAppointmentById = async (appointmentId) => {
   return appointment;
 };
 
+const deletePatient = async (patientId) => {
+  const patient = await prisma.patient.findUnique({
+    where: { id: patientId },
+    select: { id: true, userId: true },
+  });
+
+  if (!patient) {
+    const error = new Error("Patient not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const appointmentCount = await prisma.appointment.count({
+    where: { patientId },
+  });
+
+  if (appointmentCount > 0) {
+    const error = new Error(
+      "Cannot delete a patient who has appointments. Delete or reassign their appointments first.",
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.patient.delete({ where: { id: patientId } });
+
+    if (patient.userId) {
+      await tx.user.delete({ where: { id: patient.userId } });
+    }
+  });
+
+  return { id: patientId };
+};
+
+const deleteDoctor = async (doctorId) => {
+  const doctor = await prisma.doctor.findUnique({
+    where: { id: doctorId },
+    select: { id: true, userId: true },
+  });
+
+  if (!doctor) {
+    const error = new Error("Doctor not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const appointmentCount = await prisma.appointment.count({
+    where: { doctorId },
+  });
+
+  if (appointmentCount > 0) {
+    const error = new Error(
+      "Cannot delete a doctor who has appointments. Delete or reassign their appointments first.",
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.doctor.delete({ where: { id: doctorId } });
+
+    if (doctor.userId) {
+      await tx.user.delete({ where: { id: doctor.userId } });
+    }
+  });
+
+  return { id: doctorId };
+};
+
+const deleteAppointment = async (appointmentId) => {
+  const appointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    select: { id: true },
+  });
+
+  if (!appointment) {
+    const error = new Error("Appointment not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await prisma.appointment.delete({ where: { id: appointmentId } });
+
+  return { id: appointmentId };
+};
+
 module.exports = {
   getDashboard,
   getPatients,
   getPatientById,
   createPatient,
   updatePatient,
+  deletePatient,
   getDoctors,
   getDoctorById,
   createDoctor,
   updateDoctor,
+  deleteDoctor,
   getAppointments,
   createAppointment,
   updateAppointment,
+  deleteAppointment,
   getAppointmentById,
 };

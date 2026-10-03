@@ -17,28 +17,34 @@ app.use(express.json());
 app.disable("etag");
 
 app.get("/", (req, res) => {
-    res.status(200).json({
-        success: true,
-        message:
-            "Clinic Appointment Management API is running",
-    });
+  res.status(200).json({
+    success: true,
+    message: "Clinic Appointment Management API is running",
+  });
 });
 
-app.use(
-    "/api-docs",
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec)
-);
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/patient", patientRoutes);
-console.log("authRoutes:", typeof authRoutes);
-console.log("patientRoutes:", typeof patientRoutes);
-console.log("staffRoutes:", typeof staffRoutes);
-console.log("doctorRoutes:", typeof doctorRoutes);
-console.log("errorHandler:", typeof errorHandler);
 app.use("/api/staff", staffRoutes);
 app.use("/api/doctor", doctorRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
+  });
+});
 
 app.use(errorHandler);
 
