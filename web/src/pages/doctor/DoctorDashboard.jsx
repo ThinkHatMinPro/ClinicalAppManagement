@@ -267,17 +267,17 @@ export default function DoctorDashboard() {
                     {statusLabels[appointment.status] ||
                       appointment.status}
                   </span>
-
-                  <button
-                    onClick={() =>
-                      navigate(
-                        `/doctor/appointments/${appointment.id}`
-                      )
-                    }
-                    className="text-sm font-medium text-primary hover:underline"
-                  >
-                    View
-                  </button>
+<button
+    type="button"
+    onClick={() =>
+        navigate(
+            `/doctor/appointments/${appointment.id}`
+        )
+    }
+    className="font-medium text-primary hover:underline"
+>
+    View
+</button>
                 </div>
               </div>
             ))}

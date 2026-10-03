@@ -36,8 +36,11 @@ export default function DoctorDetails() {
                 setLoading(true);
                 setError("");
 
-                const result = await api.get(`/staff/doctors/${id}`);
-                setDoctor(result.doctor || result);
+               const result = await api.get(`/staff/doctors/${id}`);
+
+console.log("Doctor details response:", result);
+
+setDoctor(result.data);
             } catch (error) {
                 setError(error.message || "Failed to fetch doctor");
             } finally {

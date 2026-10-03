@@ -155,55 +155,53 @@ const getPatients = async ({ search, page = 1, limit = 10 }) => {
     },
   };
 };
-
 const getPatientById = async (patientId) => {
-  const patient = await prisma.patient.findUnique({
-    where: {
-      id: patientId,
-    },
-    select: {
-      id: true,
-      name: true,
-      dateOfBirth: true,
-      gender: true,
-      phone: true,
-      email: true,
-      address: true,
-      createdAt: true,
-      updatedAt: true,
-      appointments: {
-        orderBy: {
-          startTime: "desc",
+    const patient = await prisma.patient.findUnique({
+        where: {
+            id: patientId,
         },
-        take: 10,
         select: {
-          id: true,
-          startTime: true,
-          endTime: true,
-          status: true,
-          reason: true,
-          notes: true,
-          doctor: {
-            select: {
-              id: true,
-              name: true,
-              specialty: true,
+            id: true,
+            name: true,
+            dateOfBirth: true,
+            gender: true,
+            phone: true,
+            email: true,
+            address: true,
+            createdAt: true,
+            updatedAt: true,
+            appointments: {
+                orderBy: {
+                    startTime: "desc",
+                },
+                take: 10,
+                select: {
+                    id: true,
+                    startTime: true,
+                    endTime: true,
+                    status: true,
+                    reason: true,
+                    notes: true,
+                    doctor: {
+                        select: {
+                            id: true,
+                            name: true,
+                            specialty: true,
+                        },
+                    },
+                },
             },
-          },
         },
-      },
-    },
-  });
+    });
 
-  if (!patient) {
-    const error = new Error("Patient not found");
-    error.statusCode = 404;
-    throw error;
-  }
+    if (!patient) {
+        const error = new Error("Patient not found");
+        error.statusCode = 404;
+        throw error;
+    }
 
-  return patient;
+    return patient;
 };
-
 const createPatient = async ({
   name,
   dateOfBirth,
@@ -946,10 +944,17 @@ const updateAppointment = async (
 };
 
 const getAppointmentById = async (appointmentId) => {
-  const appointment = await prisma.appointment.findUnique({
-    where: {
-      id: appointmentId,
-    },
+    console.log("=================================");
+    console.log("REAL getAppointmentById");
+    console.log("Received appointmentId:", appointmentId);
+    console.log("Type:", typeof appointmentId);
+    console.log("Length:", appointmentId?.length);
+    console.log("=================================");
+
+    const appointment = await prisma.appointment.findUnique({
+        where: {
+            id: appointmentId,
+        },
     select: {
       id: true,
       startTime: true,

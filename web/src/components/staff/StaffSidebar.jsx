@@ -44,8 +44,9 @@ export default function StaffSidebar() {
                 {menuItems.map((item) => {
                     const Icon = item.icon;
 
-                    const active = location.pathname === item.path;
-
+const active =
+    location.pathname === item.path ||
+    location.pathname.startsWith(`${item.path}/`);
                     return (
                         <Link
                             key={item.path}

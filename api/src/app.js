@@ -17,20 +17,26 @@ app.use(express.json());
 app.disable("etag");
 
 app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Clinic Appointment Management API is running",
-  });
+    res.status(200).json({
+        success: true,
+        message:
+            "Clinic Appointment Management API is running",
+    });
 });
 
 app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec)
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
 );
 
 app.use("/api/auth", authRoutes);
 app.use("/api/patient", patientRoutes);
+console.log("authRoutes:", typeof authRoutes);
+console.log("patientRoutes:", typeof patientRoutes);
+console.log("staffRoutes:", typeof staffRoutes);
+console.log("doctorRoutes:", typeof doctorRoutes);
+console.log("errorHandler:", typeof errorHandler);
 app.use("/api/staff", staffRoutes);
 app.use("/api/doctor", doctorRoutes);
 

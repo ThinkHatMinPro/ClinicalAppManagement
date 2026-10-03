@@ -31,7 +31,7 @@ export default function PatientDetails() {
 
                 const result = await api.get(`/staff/patients/${id}`);
 
-                setPatient(result.patient || result);
+                setPatient(result.data);
             } catch (error) {
                 setError(error.message || "Failed to fetch patient");
             } finally {
@@ -55,7 +55,7 @@ export default function PatientDetails() {
             <div className="space-y-4">
                 <button
                     type="button"
-                    onClick={() => navigate("/patients")}
+                    onClick={() => navigate("/staff/patients")}
                     className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                 >
                     <ArrowLeft className="size-4" />
