@@ -120,14 +120,10 @@ export default function DoctorDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Doctor Dashboard
-        </h1>
-
         <p className="mt-1 text-sm text-muted-foreground">
           Welcome back
           {dashboard?.doctor?.name
-            ? `, Dr. ${dashboard.doctor.name}`
+            ? `, ${dashboard.doctor.name}`
             : ", Doctor"}
           . Here's your appointment overview.
         </p>

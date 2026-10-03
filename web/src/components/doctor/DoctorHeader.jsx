@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, LogOut } from "lucide-react";
+import { Bell, LogOut, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SwitchMode } from "@/components/theme/switch-mode";
 
@@ -16,11 +16,7 @@ export default function DoctorHeader() {
   return (
     <header className="top-0 z-40 h-16 shrink-0 border-b border-border bg-card">
       <div className="flex h-full items-center justify-between px-6 lg:px-8">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">
-            Doctor Portal
-          </h1>
-        </div>
+        <div></div>
 
         <div className="flex items-center gap-3">
           <SwitchMode width={56} height={28} />
@@ -37,7 +33,7 @@ export default function DoctorHeader() {
 
           <button
             type="button"
-            className="flex items-center gap-2 rounded-lg border border-border px-2 py-1.5 transition-colors hover:bg-muted"
+            className="flex items-center gap-2 rounded-lg border-border px-2 py-1.5 transition-colors "
             aria-label="Doctor profile"
           >
             <div className="flex items-center gap-2 rounded-lg border-border px-3 py-1.5">
