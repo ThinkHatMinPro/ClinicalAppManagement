@@ -1,11 +1,6 @@
 const doctorService = require("../services/doctorService");
 
-const sendSuccess = (
-  res,
-  message,
-  data,
-  statusCode = 200,
-) => {
+const sendSuccess = (res, message, data, statusCode = 200) => {
   return res.status(statusCode).json({
     success: true,
     message,
@@ -20,7 +15,7 @@ const getDashboard = async (req, res, next) => {
     return sendSuccess(
       res,
       "Doctor dashboard fetched successfully",
-      data,
+      data
     );
   } catch (error) {
     next(error);
@@ -34,7 +29,7 @@ const getProfile = async (req, res, next) => {
     return sendSuccess(
       res,
       "Doctor profile fetched successfully",
-      data,
+      data
     );
   } catch (error) {
     next(error);
@@ -45,13 +40,13 @@ const updateProfile = async (req, res, next) => {
   try {
     const data = await doctorService.updateProfile(
       req.user.id,
-      req.body,
+      req.body
     );
 
     return sendSuccess(
       res,
       "Doctor profile updated successfully",
-      data,
+      data
     );
   } catch (error) {
     next(error);
@@ -60,14 +55,12 @@ const updateProfile = async (req, res, next) => {
 
 const getAppointments = async (req, res, next) => {
   try {
-    const data = await doctorService.getAppointments(
-      req.user.id,
-    );
+    const data = await doctorService.getAppointments(req.user.id);
 
     return sendSuccess(
       res,
       "Doctor appointments fetched successfully",
-      data,
+      data
     );
   } catch (error) {
     next(error);
@@ -78,36 +71,31 @@ const getAppointmentById = async (req, res, next) => {
   try {
     const data = await doctorService.getAppointmentById(
       req.user.id,
-      req.params.id,
+      req.params.id
     );
 
     return sendSuccess(
       res,
-      "Appointment fetched successfully",
-      data,
+      "Doctor appointment fetched successfully",
+      data
     );
   } catch (error) {
     next(error);
   }
 };
 
-const updateAppointmentStatus = async (
-  req,
-  res,
-  next,
-) => {
+const updateAppointmentStatus = async (req, res, next) => {
   try {
-    const data =
-      await doctorService.updateAppointmentStatus(
-        req.user.id,
-        req.params.id,
-        req.body.status,
-      );
+    const data = await doctorService.updateAppointmentStatus(
+      req.user.id,
+      req.params.id,
+      req.body.status
+    );
 
     return sendSuccess(
       res,
       "Appointment status updated successfully",
-      data,
+      data
     );
   } catch (error) {
     next(error);

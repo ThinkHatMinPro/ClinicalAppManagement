@@ -67,10 +67,7 @@ router.put("/profile", doctorController.updateProfile);
  *       200:
  *         description: Doctor appointments fetched successfully
  */
-router.get(
-  "/appointments",
-  doctorController.getAppointments,
-);
+router.get("/appointments", doctorController.getAppointments);
 
 /**
  * @swagger
@@ -93,7 +90,7 @@ router.get(
  */
 router.get(
   "/appointments/:id",
-  doctorController.getAppointmentById,
+  doctorController.getAppointmentById
 );
 
 /**
@@ -133,7 +130,7 @@ router.get(
  */
 router.patch(
   "/appointments/:id/status",
-  doctorController.updateAppointmentStatus,
+  doctorController.updateAppointmentStatus
 );
 
 module.exports = router;
