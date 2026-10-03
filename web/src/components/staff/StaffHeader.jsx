@@ -14,7 +14,7 @@ export default function StaffHeader() {
   };
 
   return (
-    <header className="top-0 z-40 h-16 shrink-0 border-b border-border bg-card">
+    <header className="top-0 z-40 h-14 shrink-0 border-b border-border bg-card">
       <div className="flex h-full items-center justify-between px-6 lg:px-8">
         <div>      </div>
 

@@ -71,8 +71,6 @@ export default function Doctors() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Doctors</h2>
-
           <p className="text-sm text-muted-foreground">
             Manage registered clinic doctors.
           </p>

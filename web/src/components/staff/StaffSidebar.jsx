@@ -33,8 +33,8 @@ export default function StaffSidebar() {
   const location = useLocation();
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-border bg-card md:block">
-      <div className="flex h-16 items-center border-b border-border px-5">
+    <aside className="hidden w-52 shrink-0 border-r border-border bg-card md:block">
+      <div className="flex h-14 items-center border-b border-border px-5">
         <button type="button" className="text-lg font-semibold tracking-tight">
           Staff Portal
         </button>

@@ -141,8 +141,6 @@ export default function AuthPage() {
 
       {/* Main */}
       <main className="relative z-10 flex items-center justify-center px-4 py-6 md:px-6">
-        {/* Reduced from max-w-5xl to max-w-4xl */}
-        {/* Removed min-h-[640px] */}
         <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-card shadow-xl shadow-primary/5 md:grid-cols-2">
           {/* ================= LEFT COLUMN ================= */}
           <div className="relative md:border-r md:border-border">
@@ -197,35 +195,11 @@ export default function AuthPage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="relative z-10 px-4 py-2 text-center text-xs text-muted-foreground">
-        {/* <p>Your information is protected and securely stored.</p>
-
-        <nav
-          aria-label="Legal"
-          className="mt-1 flex justify-center gap-3 text-[11px]"
-        >
-          <a href="/privacy" className="underline-offset-4 hover:underline">
-            Privacy
-          </a>
-
-          <a href="/terms" className="underline-offset-4 hover:underline">
-            Terms
-          </a>
-
-          <a href="/help" className="underline-offset-4 hover:underline">
-            Help
-          </a>
-        </nav> */}
-      </footer>
     </div>
   );
 }
 
-/* =============================================
-   INFO PANEL
-============================================= */
+/* INFO PANEL */
 
 function InfoPanel({ heading, description, features, cta, onAction }) {
   return (

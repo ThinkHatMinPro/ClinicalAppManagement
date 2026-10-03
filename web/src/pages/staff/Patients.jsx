@@ -55,8 +55,6 @@ export default function Patients() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-semibold">Patients</h1>
-
           <p className="text-sm text-muted-foreground">
             Manage clinic patients
           </p>

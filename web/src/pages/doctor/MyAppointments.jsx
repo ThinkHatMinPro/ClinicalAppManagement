@@ -20,9 +20,7 @@ const getLocalDate = () => {
   const now = new Date();
   const offset = now.getTimezoneOffset();
 
-  return new Date(now.getTime() - offset * 60000)
-    .toISOString()
-    .split("T")[0];
+  return new Date(now.getTime() - offset * 60000).toISOString().split("T")[0];
 };
 
 const getAppointmentDate = (startTime) => {
@@ -31,9 +29,7 @@ const getAppointmentDate = (startTime) => {
   const date = new Date(startTime);
   const offset = date.getTimezoneOffset();
 
-  return new Date(date.getTime() - offset * 60000)
-    .toISOString()
-    .split("T")[0];
+  return new Date(date.getTime() - offset * 60000).toISOString().split("T")[0];
 };
 
 const formatTime = (value) => {
@@ -75,19 +71,17 @@ export default function MyAppointments() {
   const filteredAppointments = useMemo(() => {
     return appointments.filter(
       (appointment) =>
-        getAppointmentDate(appointment.startTime) === selectedDate
+        getAppointmentDate(appointment.startTime) === selectedDate,
     );
   }, [appointments, selectedDate]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <p className="mt-2 text-muted-foreground">
-          View your appointments by date.
-        </p>
+        <p className="text-muted-foreground">View your appointments by date.</p>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
         <label
           htmlFor="appointment-date"
           className="block text-base font-medium text-foreground"
@@ -95,14 +89,12 @@ export default function MyAppointments() {
           Select Date
         </label>
 
-        <div className="mt-4">
+        <div className="mt-1">
           <input
             id="appointment-date"
             type="date"
             value={selectedDate}
-            onChange={(event) =>
-              setSelectedDate(event.target.value)
-            }
+            onChange={(event) => setSelectedDate(event.target.value)}
             className="w-full max-w-xs rounded-lg border border-input bg-background px-4 py-3 text-foreground outline-none transition focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -124,9 +116,7 @@ export default function MyAppointments() {
 
         {loading ? (
           <div className="p-10 text-center">
-            <p className="text-muted-foreground">
-              Loading appointments...
-            </p>
+            <p className="text-muted-foreground">Loading appointments...</p>
           </div>
         ) : error ? (
           <div className="p-10 text-center">
@@ -196,17 +186,14 @@ export default function MyAppointments() {
                           "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {statusLabels[appointment.status] ||
-                          appointment.status}
+                        {statusLabels[appointment.status] || appointment.status}
                       </span>
                     </td>
 
                     <td className="px-6 py-4">
                       <button
                         onClick={() =>
-                          navigate(
-                            `/doctor/appointments/${appointment.id}`
-                          )
+                          navigate(`/doctor/appointments/${appointment.id}`)
                         }
                         className="text-sm font-medium text-primary hover:underline"
                       >

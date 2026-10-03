@@ -1,9 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import {
-  CalendarDays,
-  LayoutDashboard,
-  UserRound,
-} from "lucide-react";
+import { CalendarDays, LayoutDashboard, UserRound } from "lucide-react";
 
 import PatientHeader from "../patient/PatientHeader";
 
@@ -35,16 +31,16 @@ export default function PatientLayout() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <aside className="hidden w-64 shrink-0 border-r border-border bg-card md:block">
-        <div className="flex h-16 items-center border-b border-border px-5">
+      <aside className="hidden w-52 shrink-0 border-r border-border bg-card md:block">
+        <div className="flex h-14 items-center border-b border-border px-5">
           <button
             type="button"
             onClick={() => navigate("/patient/dashboard")}
             className="text-lg font-semibold tracking-tight"
           >
-          <h1 className="text-xl font-semibold tracking-tight">
-            Patient Portal
-          </h1>
+            <h1 className="text-xl font-semibold tracking-tight">
+              Patient Portal
+            </h1>
           </button>
         </div>
 
