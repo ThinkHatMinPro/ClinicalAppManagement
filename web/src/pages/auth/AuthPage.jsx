@@ -11,7 +11,7 @@ import {
 
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
-import HeartbeatLine from "@/components/HeartbeatLine";
+import HeartbeatLine from "@/components/Heartbeatline";
 import { SwitchMode } from "@/components/theme/switch-mode";
 
 /* =============================================
