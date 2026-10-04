@@ -1,8 +1,9 @@
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://clinic-management-api-hoil.onrender.com/api";
 
 const request = async (endpoint, options = {}) => {
-  const response = await fetch(`${API_URL}${endpoint}`, options);
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
 
   let result;
 
